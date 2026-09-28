@@ -5,6 +5,7 @@ import { useFilterStore, DatePreset } from "@/stores/use-filter-store";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { LogoMark } from "@/components/brand/logo";
 import {
   Plus,
   Calendar,
@@ -17,10 +18,18 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full py-8 items-center justify-between border-b border-border/70 bg-background/85 px-6 sm:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
       {/* Left: Breadcrumbs / Title */}
-      <div className="flex items-center gap-3">
-        <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight">
-          Dashboard Keuangan
-        </h1>
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        <Link href="/dashboard" className="lg:hidden flex items-center shrink-0">
+          <LogoMark size={30} />
+        </Link>
+        <div>
+          <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-tight">
+            Dashboard Keuangan
+          </h1>
+          <span className="sm:hidden text-[10px] text-muted-foreground block -mt-0.5">
+            September 2026
+          </span>
+        </div>
         <span className="hidden sm:inline-block text-muted-foreground text-xs">•</span>
         <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Calendar className="h-3.5 w-3.5 text-emerald-500" />

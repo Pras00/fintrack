@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { loginUser, registerUser } from "@/actions/auth";
 import { LoginInput, RegisterInput } from "@/lib/validations/auth";
+import { Logo } from "@/components/brand/logo";
 
 interface AuthCardProps {
   initialTab?: "login" | "register";
@@ -102,18 +103,8 @@ export function AuthCard({ initialTab = "login" }: AuthCardProps) {
   return (
     <div className="w-full max-w-md space-y-6">
       {/* Mobile Brand Header */}
-      <div className="flex lg:hidden items-center justify-center gap-2.5 pb-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 font-bold text-sm">
-          FT
-        </div>
-        <div>
-          <span className="text-base font-bold tracking-tight text-foreground block">
-            FinTrack
-          </span>
-          <span className="text-[11px] text-muted-foreground block -mt-0.5">
-            Manajemen Keuangan
-          </span>
-        </div>
+      <div className="flex lg:hidden items-center justify-center pb-2">
+        <Logo size="md" showTagline />
       </div>
 
       {/* Auth Card Box */}

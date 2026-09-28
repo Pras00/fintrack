@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { Logo } from "@/components/brand/logo";
 
 export function ProductShowcase() {
   return (
@@ -16,19 +17,7 @@ export function ProductShowcase() {
 
       {/* Brand Header */}
       <div className="relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-600 dark:text-teal-400 font-bold text-base shadow-xs">
-            FT
-          </div>
-          <div>
-            <span className="text-lg font-bold tracking-tight text-foreground block">
-              FinTrack
-            </span>
-            <span className="text-xs text-muted-foreground block -mt-0.5">
-              Sistem Manajemen Keuangan
-            </span>
-          </div>
-        </div>
+        <Logo size="lg" showTagline />
       </div>
 
       {/* Center Value Proposition & Showcase Cards */}

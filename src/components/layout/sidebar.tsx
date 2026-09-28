@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutUser } from "@/actions/auth";
+import { Logo } from "@/components/brand/logo";
 
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -37,19 +38,7 @@ export function Sidebar() {
     <aside className="hidden lg:flex w-64 h-screen shrink-0 flex-col border-r border-border/70 bg-card/60 backdrop-blur-md">
       {/* Brand Header */}
       <div className="flex h-16 shrink-0 items-center justify-between px-5 border-b border-border/40">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 font-bold text-sm">
-            FT
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-foreground">
-              FinTrack
-            </span>
-            <span className="text-[11px] text-muted-foreground leading-none">
-              Manajemen Keuangan
-            </span>
-          </div>
-        </Link>
+        <Logo size="md" href="/dashboard" />
       </div>
 
       {/* Nav Menu */}

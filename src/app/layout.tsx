@@ -22,6 +22,14 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "FinTrack - Professional Finance Management",
   description: "Dashboard profesional untuk pencatatan dan pengelolaan keuangan pribadi modern.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
