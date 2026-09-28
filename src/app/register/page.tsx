@@ -15,7 +15,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Centered Main 2-Section Content */}
-      <div className="w-full max-w-5xl mx-auto z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-12 items-center">
+      <div className="w-full max-w-5xl lg:max-w-[1080px] xl:max-w-6xl mx-auto z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center">
         {/* Left Section: Creative Financial Overview (Desktop) */}
         <section className="hidden lg:block lg:col-span-7">
           <ProductShowcase />
