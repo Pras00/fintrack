@@ -409,15 +409,18 @@ export function BudgetModal() {
       : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      onClick={closeBudgetModal}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
+    >
       <div
-        className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 text-foreground animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-lg rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden cursor-default animate-in zoom-in-95 duration-200"
       >
-        {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+        {/* Pinned Header */}
+        <div className="flex items-start justify-between px-6 py-4.5 border-b border-slate-200/80 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 shrink-0">
               <Target className="h-5 w-5" />
             </div>
             <div>
@@ -441,14 +444,16 @@ export function BudgetModal() {
           <button
             type="button"
             onClick={closeBudgetModal}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground transition-colors cursor-pointer"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground transition-colors cursor-pointer shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+        {/* Form Container */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
+          {/* Scrollable Content Body with breathing room */}
+          <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0 space-y-5 [scrollbar-width:thin] scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
           {/* CATEGORY SELECTOR */}
           {budgetModalMode === "CREATE" ? (
             <div className="space-y-2">
@@ -462,7 +467,7 @@ export function BudgetModal() {
               </label>
 
               {/* Enhanced Container with padding to prevent border & ring clipping */}
-              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/30 p-2 max-h-52 overflow-y-auto">
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/30 p-2 max-h-52 overflow-y-auto [scrollbar-width:thin] scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                 <div className="grid grid-cols-2 gap-2">
                   {categories.map((cat) => {
                     const Icon = resolveCategoryIcon(cat.icon);
@@ -862,8 +867,10 @@ export function BudgetModal() {
             </div>
           )}
 
-          {/* Action Footer */}
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
+          </div>
+
+          {/* Action Footer (Pinned) */}
+          <div className="px-6 py-4 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/90 flex items-center justify-end gap-2.5 shrink-0 z-10">
             <Button
               type="button"
               variant="outline"
