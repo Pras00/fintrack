@@ -278,14 +278,14 @@ export function DateRangePicker() {
 
       {/* POPOVER PANEL */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2.5 z-50 w-[340px] sm:w-[560px] rounded-2xl border border-border/80 bg-popover/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl p-4 sm:p-5 text-foreground animate-in fade-in zoom-in-95 duration-150">
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-5">
+        <div className="absolute right-0 top-full mt-2.5 z-50 w-[calc(100vw-2rem)] sm:w-[640px] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-4 sm:p-5 text-foreground animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
             {/* LEFT COLUMN: QUICK PRESETS */}
-            <div className="sm:col-span-4 border-b sm:border-b-0 sm:border-r border-border/60 pb-3 sm:pb-0 sm:pr-4 space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 pb-1.5 block">
+            <div className="w-full sm:w-[220px] shrink-0 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 pb-3 sm:pb-0 sm:pr-4 space-y-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 px-3 pb-1 block">
                 Pilihan Cepat
               </span>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {PRESET_OPTIONS.map((item) => {
                   const isSelected = tempPreset === item.key;
                   return (
@@ -294,15 +294,15 @@ export function DateRangePicker() {
                       type="button"
                       onClick={() => handlePresetSelect(item.key)}
                       className={cn(
-                        "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
+                        "w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer",
                         isSelected
-                          ? "bg-teal-500/10 text-teal-700 dark:text-teal-300 font-semibold"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          ? "bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300 font-semibold shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
                       )}
                     >
-                      <span>{item.label}</span>
+                      <span className="whitespace-nowrap tracking-normal">{item.label}</span>
                       {isSelected && (
-                        <Check className="h-3 w-3 text-teal-600 dark:text-teal-400 shrink-0" />
+                        <Check className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0 ml-2" />
                       )}
                     </button>
                   );
@@ -311,26 +311,26 @@ export function DateRangePicker() {
             </div>
 
             {/* RIGHT COLUMN: CALENDAR */}
-            <div className="sm:col-span-8 space-y-3">
+            <div className="flex-1 space-y-3.5 min-w-0">
               {/* Header Nav */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between px-1">
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer"
                   title="Bulan sebelumnya"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
 
-                <div className="text-xs font-bold text-foreground tracking-tight">
+                <div className="text-sm font-bold text-foreground tracking-tight">
                   {ID_MONTHS_FULL[viewMonth]} {viewYear}
                 </div>
 
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer"
                   title="Bulan berikutnya"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -342,7 +342,7 @@ export function DateRangePicker() {
                 {DAYS_HEADER.map((day) => (
                   <span
                     key={day}
-                    className="text-[10px] font-semibold text-muted-foreground py-1"
+                    className="text-[11px] font-semibold text-muted-foreground py-1 tracking-wide"
                   >
                     {day}
                   </span>
@@ -350,7 +350,7 @@ export function DateRangePicker() {
               </div>
 
               {/* Days Grid */}
-              <div className="grid grid-cols-7 gap-y-1 text-xs">
+              <div className="grid grid-cols-7 gap-y-1.5 text-xs">
                 {calendarCells.map((cell, idx) => {
                   const isStart = selectedRange.start === cell.dateStr;
                   const isEnd = selectedRange.end === cell.dateStr;
@@ -367,24 +367,24 @@ export function DateRangePicker() {
                       type="button"
                       onClick={() => handleDateClick(cell.dateStr)}
                       className={cn(
-                        "h-8 flex items-center justify-center transition-all cursor-pointer relative text-xs font-medium select-none",
-                        !cell.isCurrentMonth && "text-muted-foreground/30",
+                        "h-8.5 sm:h-9 flex items-center justify-center transition-all cursor-pointer relative text-xs font-medium select-none",
+                        !cell.isCurrentMonth && "text-slate-300 dark:text-slate-700",
                         cell.isCurrentMonth &&
                           !inRange &&
-                          "text-foreground hover:bg-muted hover:rounded-lg",
+                          "text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:rounded-xl",
                         cell.isToday &&
                           !inRange &&
                           "font-bold text-teal-600 dark:text-teal-400",
                         inRange && "bg-teal-500/15 text-foreground font-semibold",
                         isStart &&
-                          "rounded-l-lg bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold",
+                          "rounded-l-xl bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold shadow-xs",
                         isEnd &&
-                          "rounded-r-lg bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold",
+                          "rounded-r-xl bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold shadow-xs",
                         isSingle &&
-                          "rounded-lg bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold"
+                          "rounded-xl bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold shadow-xs"
                       )}
                     >
-                      {cell.dayNumber}
+                      <span>{cell.dayNumber}</span>
                       {cell.isToday && !inRange && (
                         <span className="absolute bottom-1 w-1 h-1 rounded-full bg-teal-500" />
                       )}
@@ -396,33 +396,33 @@ export function DateRangePicker() {
           </div>
 
           {/* BOTTOM ACTION BAR */}
-          <div className="mt-4 pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Clock className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-              <span className="font-medium text-foreground text-[11px] truncate">
+          <div className="mt-5 pt-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+              <Clock className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span className="font-medium text-foreground text-xs truncate">
                 {summaryText}
               </span>
             </div>
 
-            <div className="flex items-center justify-end gap-2 shrink-0">
+            <div className="flex items-center justify-end gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={() => {
                   resetFilters();
                   setIsOpen(false);
                 }}
-                className="flex items-center gap-1 h-8 px-2.5 rounded-lg border border-border/70 hover:bg-muted text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 h-8.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer"
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="h-3.5 w-3.5" />
                 <span>Reset</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleApply}
-                className="flex items-center gap-1 h-8 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white dark:text-slate-950 text-[11px] font-bold transition-all shadow-xs cursor-pointer"
+                className="flex items-center gap-1.5 h-8.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white dark:text-slate-950 text-xs font-bold transition-all shadow-xs cursor-pointer"
               >
-                <Check className="h-3 w-3" />
+                <Check className="h-3.5 w-3.5" />
                 <span>Terapkan Filter</span>
               </button>
             </div>
