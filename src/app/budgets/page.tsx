@@ -1,104 +1,224 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/utils";
+import { useModalStore } from "@/stores/use-modal-store";
+import {
+  getBudgetsAction,
+  deleteBudgetAction,
+  BudgetsOverviewResponse,
+} from "@/actions/budgets";
+import { toast } from "sonner";
 import {
   Plus,
   AlertTriangle,
   CheckCircle2,
+  AlertCircle,
   Utensils,
   Receipt,
   ShoppingBag,
   Car,
   Gamepad2,
   HeartPulse,
+  GraduationCap,
+  Briefcase,
+  Tag,
+  Pencil,
+  Trash2,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Sparkles,
+  Target,
 } from "lucide-react";
 import type { BudgetItem } from "@/types";
 
-interface DetailedBudget extends BudgetItem {
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-}
-
-const BUDGETS: DetailedBudget[] = [
-  {
-    name: "Makanan & Minuman",
-    spent: 3450000,
-    limit: 4000000,
-    percent: 86,
-    icon: Utensils,
-    color: "#EF4444",
-  },
-  {
-    name: "Tagihan & Utilitas",
-    spent: 2100000,
-    limit: 2500000,
-    percent: 84,
-    icon: Receipt,
-    color: "#EAB308",
-  },
-  {
-    name: "Transportasi",
-    spent: 1450000,
-    limit: 2000000,
-    percent: 72,
-    icon: Car,
-    color: "#F97316",
-  },
-  {
-    name: "Belanja & Lifestyle",
-    spent: 1350000,
-    limit: 2000000,
-    percent: 67,
-    icon: ShoppingBag,
-    color: "#EC4899",
-  },
-  {
-    name: "Hiburan & Hobi",
-    spent: 1200000,
-    limit: 1500000,
-    percent: 80,
-    icon: Gamepad2,
-    color: "#8B5CF6",
-  },
-  {
-    name: "Kesehatan & Medis",
-    spent: 450000,
-    limit: 1500000,
-    percent: 30,
-    icon: HeartPulse,
-    color: "#06B6D4",
-  },
+const MONTH_NAMES = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
 ];
 
+function resolveCategoryIcon(iconName?: string) {
+  switch (iconName) {
+    case "utensils":
+      return Utensils;
+    case "receipt":
+      return Receipt;
+    case "shopping-bag":
+      return ShoppingBag;
+    case "car":
+      return Car;
+    case "gamepad-2":
+      return Gamepad2;
+    case "heart-pulse":
+      return HeartPulse;
+    case "graduation-cap":
+      return GraduationCap;
+    case "briefcase":
+      return Briefcase;
+    default:
+      return Tag;
+  }
+}
+
 export default function BudgetsPage() {
-  const totalLimit = BUDGETS.reduce((sum, b) => sum + b.limit, 0);
-  const totalSpent = BUDGETS.reduce((sum, b) => sum + b.spent, 0);
-  const remainingBudget = totalLimit - totalSpent;
-  const overallPercent = Math.round((totalSpent / totalLimit) * 100);
+  const { openBudgetModal } = useModalStore();
+
+  const [month, setMonth] = useState(9); // Default September
+  const [year, setYear] = useState(2026); // Default 2026
+  const [data, setData] = useState<BudgetsOverviewResponse>({
+    budgets: [],
+    totalLimit: 0,
+    totalSpent: 0,
+    remainingBudget: 0,
+    overallPercent: 0,
+    activeMonth: 9,
+    activeYear: 2026,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchBudgets = useCallback(async (m: number, y: number) => {
+    setIsLoading(true);
+    try {
+      const res = await getBudgetsAction(m, y);
+      setData(res);
+    } catch (err) {
+      console.error("Gagal memuat anggaran:", err);
+      toast.error("Gagal memuat data anggaran");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBudgets(month, year);
+  }, [fetchBudgets, month, year]);
+
+  // Reactive listener for budget updates and transaction creation
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchBudgets(month, year);
+    };
+
+    window.addEventListener("fintrack:budget-updated", handleRefresh);
+    window.addEventListener("fintrack:transaction-created", handleRefresh);
+    return () => {
+      window.removeEventListener("fintrack:budget-updated", handleRefresh);
+      window.removeEventListener("fintrack:transaction-created", handleRefresh);
+    };
+  }, [fetchBudgets, month, year]);
+
+  const handlePrevMonth = () => {
+    if (month === 1) {
+      setMonth(12);
+      setYear((prev) => prev - 1);
+    } else {
+      setMonth((prev) => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (month === 12) {
+      setMonth(1);
+      setYear((prev) => prev + 1);
+    } else {
+      setMonth((prev) => prev + 1);
+    }
+  };
+
+  const handleDeleteBudget = async (budget: BudgetItem) => {
+    if (!confirm(`Hapus batas anggaran untuk kategori "${budget.name}"?`)) {
+      return;
+    }
+
+    setDeletingId(budget.id);
+    try {
+      const res = await deleteBudgetAction(budget.id);
+      if (res.success) {
+        toast.success(`Anggaran ${budget.name} berhasil dihapus`);
+        fetchBudgets(month, year);
+      } else {
+        toast.error(res.error || "Gagal menghapus anggaran");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Terjadi kesalahan saat menghapus anggaran");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const { budgets, totalLimit, totalSpent, remainingBudget, overallPercent } = data;
 
   return (
     <DashboardShell>
-      {/* Header */}
+      {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/50 pb-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            Perencanaan & Kontrol Anggaran
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Perencanaan & Kontrol Anggaran
+            </h2>
+            <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+              Live Database
+            </span>
+          </div>
           <p className="text-xs text-muted-foreground mt-1">
             Tetapkan batas belanja per kategori untuk menjaga stabilitas finansial bulanan Anda
           </p>
         </div>
 
-        <Button
-          onClick={() => alert("Fitur Tambah Batas Anggaran segera siap!")}
-          className="h-10 rounded-xl px-4.5 text-xs font-semibold gap-2 shadow-xs"
-        >
-          <Plus className="h-4 w-4" />
-          Batas Anggaran Baru
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Month / Year Navigator */}
+          <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-background/80 p-1 shadow-xs">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title="Bulan sebelumnya"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-1.5 px-2 text-xs font-semibold text-foreground">
+              <Calendar className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+              <span>
+                {MONTH_NAMES[month - 1]} {year}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title="Bulan berikutnya"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Add Budget Button */}
+          <Button
+            onClick={() => openBudgetModal("CREATE")}
+            className="h-10 rounded-xl px-4 text-xs font-bold gap-2 bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white dark:text-slate-950 shadow-xs transition-all cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Batas Anggaran Baru</span>
+          </Button>
+        </div>
       </div>
 
       {/* Overview Metric Banner */}
@@ -106,41 +226,60 @@ export default function BudgetsPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-1">
             <span className="text-xs text-muted-foreground font-medium">
-              Alokasi Total Anggaran Bulan Ini
+              Alokasi Total Anggaran Bulan Ini ({MONTH_NAMES[month - 1]} {year})
             </span>
             <div className="flex items-baseline gap-3">
               <span className="text-3xl font-extrabold tabular-nums text-foreground">
-                {formatRupiah(totalSpent)}
+                {isLoading ? "..." : formatRupiah(totalSpent)}
               </span>
               <span className="text-sm font-semibold text-muted-foreground tabular-nums">
-                dari batas {formatRupiah(totalLimit)}
+                dari batas {isLoading ? "..." : formatRupiah(totalLimit)}
               </span>
             </div>
             <p className="text-xs text-muted-foreground pt-1">
-              Sisa alokasi dana aman:{" "}
-              <span className="font-bold text-emerald-500 tabular-nums">
-                {formatRupiah(remainingBudget)}
-              </span>
+              {remainingBudget >= 0 ? (
+                <>
+                  Sisa alokasi dana aman:{" "}
+                  <span className="font-bold text-emerald-500 tabular-nums">
+                    {formatRupiah(remainingBudget)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  Defisit batas anggaran:{" "}
+                  <span className="font-bold text-rose-500 tabular-nums">
+                    -{formatRupiah(Math.abs(remainingBudget))}
+                  </span>
+                </>
+              )}
             </p>
           </div>
 
           <div className="w-full lg:w-72 space-y-2">
             <div className="flex items-center justify-between text-xs font-medium">
               <span className="text-muted-foreground">Kapasitas Terpakai</span>
-              <span className={`font-bold tabular-nums ${overallPercent > 80 ? "text-amber-500" : "text-emerald-500"}`}>
-                {overallPercent}%
+              <span
+                className={`font-bold tabular-nums ${
+                  overallPercent >= 100
+                    ? "text-rose-500"
+                    : overallPercent >= 80
+                    ? "text-amber-500"
+                    : "text-emerald-500"
+                }`}
+              >
+                {isLoading ? "..." : `${overallPercent}%`}
               </span>
             </div>
             <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  overallPercent > 85
+                  overallPercent >= 100
                     ? "bg-rose-500"
-                    : overallPercent > 75
+                    : overallPercent >= 80
                     ? "bg-amber-500"
                     : "bg-emerald-500"
                 }`}
-                style={{ width: `${overallPercent}%` }}
+                style={{ width: `${Math.min(overallPercent, 100)}%` }}
               />
             </div>
           </div>
@@ -148,73 +287,167 @@ export default function BudgetsPage() {
       </Card>
 
       {/* Budgets Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {BUDGETS.map((b) => {
-          const Icon = b.icon;
-          const isWarning = b.percent >= 80;
-          const remaining = b.limit - b.spent;
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center p-16 text-muted-foreground gap-3">
+          <Loader2 className="h-7 w-7 animate-spin text-teal-600 dark:text-teal-400" />
+          <span className="text-xs font-medium">Memuat data anggaran dari database NeonDB...</span>
+        </div>
+      ) : budgets.length === 0 ? (
+        <Card className="p-12 text-center border-dashed border-border/80">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 mb-3">
+            <Target className="h-6 w-6" />
+          </div>
+          <h3 className="text-sm font-bold text-foreground">
+            Belum Ada Batas Anggaran di Periode Ini
+          </h3>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1 mb-5">
+            Tetapkan batas maksimal pengeluaran bulanan Anda untuk kategori seperti Makanan, Tagihan, atau Transportasi.
+          </p>
+          <Button
+            onClick={() => openBudgetModal("CREATE")}
+            className="h-9 rounded-xl px-4 text-xs font-bold gap-2 bg-teal-600 hover:bg-teal-700 text-white cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Tetapkan Anggaran Pertama</span>
+          </Button>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {budgets.map((b) => {
+            const Icon = resolveCategoryIcon(b.categoryIcon);
+            const isOver = b.percent >= 100;
+            const isWarning = b.percent >= 80 && !isOver;
+            const remaining = b.limit - b.spent;
+            const color = b.categoryColor || "#10B981";
 
-          return (
-            <Card key={b.name} className="p-5 border-border/70 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: `${b.color}15`, color: b.color }}
-                  >
-                    <Icon className="h-4 w-4" />
+            return (
+              <Card
+                key={b.id}
+                className="p-5 border-border/70 space-y-3.5 hover:border-border transition-all shadow-xs"
+              >
+                {/* Top Row: Icon, Category Name, and Status Badge */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                      style={{
+                        backgroundColor: `${color}18`,
+                        color: color,
+                      }}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-foreground truncate">
+                        {b.name}
+                      </h3>
+                      <span className="text-[11px] text-muted-foreground block">
+                        Limit Bulanan
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-foreground">{b.name}</h3>
-                    <span className="text-[11px] text-muted-foreground">Limit Bulanan</span>
+
+                  {/* Actions & Badge */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isOver ? (
+                      <span className="flex items-center gap-1 rounded-lg bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold text-rose-500 border border-rose-500/20">
+                        <AlertCircle className="h-3 w-3" />
+                        Melebihi Limit
+                      </span>
+                    ) : isWarning ? (
+                      <span className="flex items-center gap-1 rounded-lg bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold text-amber-500 border border-amber-500/20">
+                        <AlertTriangle className="h-3 w-3" />
+                        Mendekati Limit
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 rounded-lg bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-500 border border-emerald-500/20">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Aman
+                      </span>
+                    )}
+
+                    {/* Edit Button */}
+                    <button
+                      type="button"
+                      onClick={() => openBudgetModal("EDIT", b)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Edit batas anggaran"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+
+                    {/* Delete Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteBudget(b)}
+                      disabled={deletingId === b.id}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/80 hover:bg-rose-500/10 hover:border-rose-500/30 text-muted-foreground hover:text-rose-500 transition-colors cursor-pointer"
+                      title="Hapus anggaran"
+                    >
+                      {deletingId === b.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-rose-500" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  {isWarning ? (
-                    <span className="flex items-center gap-1 rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500 border border-amber-500/20">
-                      <AlertTriangle className="h-3 w-3" />
-                      Mendekati Limit
+                {/* Progress bar and values */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-foreground tabular-nums">
+                      {formatRupiah(b.spent)}
                     </span>
-                  ) : (
-                    <span className="flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 border border-emerald-500/20">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Aman
+                    <span className="text-muted-foreground tabular-nums">
+                      Batas: {formatRupiah(b.limit)} ({b.percent}%)
                     </span>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              {/* Progress bar */}
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-foreground tabular-nums">
-                    {formatRupiah(b.spent)}
-                  </span>
-                  <span className="text-muted-foreground tabular-nums">
-                    Batas: {formatRupiah(b.limit)} ({b.percent}%)
-                  </span>
+                  <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isOver
+                          ? "bg-rose-500"
+                          : isWarning
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                      }`}
+                      style={{ width: `${Math.min(b.percent, 100)}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] pt-0.5">
+                    <span className="text-muted-foreground">
+                      Status:{" "}
+                      <strong className={isOver ? "text-rose-500" : isWarning ? "text-amber-500" : "text-emerald-500"}>
+                        {b.percent}%
+                      </strong>
+                    </span>
+                    <span className="text-muted-foreground">
+                      {remaining >= 0 ? (
+                        <>
+                          Sisa:{" "}
+                          <span className="font-semibold text-foreground tabular-nums">
+                            {formatRupiah(remaining)}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          Kelebihan:{" "}
+                          <span className="font-semibold text-rose-500 tabular-nums">
+                            +{formatRupiah(Math.abs(remaining))}
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </div>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted/60 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      b.percent >= 85
-                        ? "bg-rose-500"
-                        : b.percent >= 80
-                        ? "bg-amber-500"
-                        : "bg-emerald-500"
-                    }`}
-                    style={{ width: `${b.percent}%` }}
-                  />
-                </div>
-                <span className="text-[11px] text-muted-foreground block text-right">
-                  Sisa anggaran: <span className="font-semibold text-foreground tabular-nums">{formatRupiah(remaining)}</span>
-                </span>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </DashboardShell>
   );
 }

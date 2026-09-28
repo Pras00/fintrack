@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import { TransactionModal } from "@/components/modals/transaction-modal";
+import { BudgetModal } from "@/components/modals/budget-modal";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -68,6 +69,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <TransactionModal />
+          <BudgetModal />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>

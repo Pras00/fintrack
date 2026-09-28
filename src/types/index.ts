@@ -28,10 +28,16 @@ export interface WalletItem {
 }
 
 export interface BudgetItem {
+  id: string;
   name: string;
+  categoryId: string;
   spent: number;
   limit: number;
   percent: number;
+  month: number;
+  year: number;
+  categoryIcon?: string;
+  categoryColor?: string;
 }
 
 export interface ActionResponse<T = undefined> {

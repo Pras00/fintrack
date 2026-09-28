@@ -1,6 +1,8 @@
 import { create } from "zustand";
+import type { BudgetItem } from "@/types";
 
 export type ModalTransactionType = "EXPENSE" | "INCOME" | "TRANSFER";
+export type BudgetModalMode = "CREATE" | "EDIT";
 
 interface ModalState {
   isTransactionModalOpen: boolean;
@@ -11,6 +13,12 @@ interface ModalState {
   isWalletModalOpen: boolean;
   openWalletModal: () => void;
   closeWalletModal: () => void;
+
+  isBudgetModalOpen: boolean;
+  budgetModalMode: BudgetModalMode;
+  editingBudget: BudgetItem | null;
+  openBudgetModal: (mode?: BudgetModalMode, budget?: BudgetItem | null) => void;
+  closeBudgetModal: () => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
@@ -23,4 +31,12 @@ export const useModalStore = create<ModalState>((set) => ({
   isWalletModalOpen: false,
   openWalletModal: () => set({ isWalletModalOpen: true }),
   closeWalletModal: () => set({ isWalletModalOpen: false }),
+
+  isBudgetModalOpen: false,
+  budgetModalMode: "CREATE",
+  editingBudget: null,
+  openBudgetModal: (mode = "CREATE", budget = null) =>
+    set({ isBudgetModalOpen: true, budgetModalMode: mode, editingBudget: budget }),
+  closeBudgetModal: () =>
+    set({ isBudgetModalOpen: false, editingBudget: null }),
 }));
