@@ -1,103 +1,99 @@
 import {
+  WalletCards,
+  ArrowRightLeft,
+  PieChart,
   TrendingUp,
-  Wallet,
   ShieldCheck,
-  CheckCircle2,
-  ArrowUpRight,
-  ArrowDownRight,
+  Sparkles,
+  Lock,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}
+
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
+  return (
+    <div className="group rounded-2xl border border-border/70 bg-card/60 dark:bg-slate-900/60 backdrop-blur-sm p-4 transition-all duration-200 hover:border-teal-500/40 hover:bg-card/90 dark:hover:bg-slate-900/90 hover:shadow-xs">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 mb-2.5 transition-transform duration-200 group-hover:scale-105">
+        {icon}
+      </div>
+      <h3 className="text-sm font-bold text-foreground tracking-tight">
+        {title}
+      </h3>
+      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 export function ProductShowcase() {
   return (
-    <div className="relative flex flex-col justify-between h-full p-8 lg:p-14 overflow-hidden bg-muted/20 border-r border-border/60">
-      {/* Background Subtle Ambience */}
-      <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="flex flex-col justify-center space-y-4 sm:space-y-5 py-2">
+      {/* Top Header & Brand */}
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between">
+          <Logo size="lg" showTagline />
+        </div>
 
-      {/* Brand Header */}
-      <div className="relative z-10">
-        <Logo size="lg" showTagline />
-      </div>
+        {/* Badge Pill */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 shadow-xs">
+          <Sparkles className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+          <span>Sovereign Ledger Platform • v2.0</span>
+        </div>
 
-      {/* Center Value Proposition & Showcase Cards */}
-      <div className="relative z-10 my-auto py-8 space-y-6 max-w-lg">
-        <div className="space-y-2.5">
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground leading-snug">
-            Kendali Finansial Terstruktur dalam Satu Tempat.
+        {/* Hero Title & Value Proposition */}
+        <div className="space-y-2 max-w-xl">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground leading-[1.18]">
+            FinTrack{" "}
+            <span className="bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-500 dark:from-teal-400 dark:via-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
+              Financial Portal
+            </span>
           </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Pantau arus kas riil, kelompokkan pos pengeluaran, dan amankan target anggaran bulanan Anda secara terintegrasi dan akurat.
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Solusi konsolidasi multi-rekening, pelacakan mutasi instan, dan kepatuhan anggaran real-time. Kelola dompet fisik, bank, dan e-wallet dalam satu sistem ledger terpadu.
           </p>
         </div>
-
-        {/* Realistic Financial Snapshot Card 1 */}
-        <div className="rounded-xl border border-border/80 bg-card/80 backdrop-blur-md p-4.5 shadow-xs space-y-3.5">
-          <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400">
-                <Wallet className="h-3.5 w-3.5" />
-              </div>
-              <span className="text-xs font-semibold text-foreground">
-                Ringkasan Kekayaan Bersih
-              </span>
-            </div>
-            <span className="text-[11px] font-semibold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" /> +8.4%
-            </span>
-          </div>
-
-          <div>
-            <div className="text-2xl font-bold tracking-tight text-foreground font-sans">
-              Rp 84.500.000
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              Total terkonsolidasi dari 4 rekening & dompet aktif
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/40 text-xs">
-            <div>
-              <span className="text-muted-foreground text-[11px] block">Pemasukan Bulan Ini</span>
-              <span className="font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-1 mt-0.5 tabular-nums">
-                <ArrowUpRight className="h-3 w-3" />
-                Rp 46.500.000
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-[11px] block">Pengeluaran Bulan Ini</span>
-              <span className="font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1 mt-0.5 tabular-nums">
-                <ArrowDownRight className="h-3 w-3" />
-                Rp 9.550.000
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Feature Highlights */}
-        <div className="space-y-2 pt-1">
-          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
-            <span>Rekonsiliasi mutasi rekening bank dan dompet digital dalam satu pintu</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
-            <span>Alokasi batas anggaran per kategori pengeluaran tanpa spreadsheet manual</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
-            <span>Laporan analitik pengeluaran dan rasio tabungan siap pakai</span>
-          </div>
-        </div>
       </div>
 
-      {/* Footer Assurance */}
-      <div className="relative z-10 pt-4 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+      {/* 2x2 Bento Feature Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
+        <FeatureCard
+          icon={<WalletCards className="h-4.5 w-4.5" />}
+          title="Konsolidasi Multi-Dompet"
+          description="Pantau saldo rekening bank, e-wallet, dan kas tunai dalam satu ringkasan kekayaan terpusat."
+        />
+        <FeatureCard
+          icon={<ArrowRightLeft className="h-4.5 w-4.5" />}
+          title="Mutasi Kas Real-Time"
+          description="Pencatatan pengeluaran, pemasukan, dan transfer saldo antar dompet secara presisi dan seketika."
+        />
+        <FeatureCard
+          icon={<PieChart className="h-4.5 w-4.5" />}
+          title="Disiplin Batas Anggaran"
+          description="Monitoring ketat limit belanja bulanan dengan peringatan dini indikator batas kritis 80%."
+        />
+        <FeatureCard
+          icon={<TrendingUp className="h-4.5 w-4.5" />}
+          title="Analitik Laju Arus Kas"
+          description="Visualisasi tren pengeluaran harian dan rasio tabungan bersih bulanan secara transparan."
+        />
+      </div>
+
+      {/* Institutional Footer Credentials */}
+      <div className="pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground max-w-xl">
         <div className="flex items-center gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-          <span>Privasi dan enkripsi data terjaga</span>
+          <span>FinTrack Sovereign Ledger System</span>
         </div>
-        <span>© 2026 FinTrack</span>
+        <div className="flex items-center gap-1.5 font-mono text-[11px]">
+          <Lock className="h-3 w-3 text-muted-foreground" />
+          <span>Enkripsi SSL & Serverless NeonDB</span>
+        </div>
       </div>
     </div>
   );
