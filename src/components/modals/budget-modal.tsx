@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useModalStore } from "@/stores/use-modal-store";
-import { formatRupiah } from "@/lib/utils";
+import { formatRupiah, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ import {
 import {
   X,
   Target,
-  Sparkles,
   Utensils,
   Receipt,
   ShoppingBag,
@@ -28,6 +27,8 @@ import {
   Tag,
   Loader2,
   Calendar,
+  CalendarDays,
+  ChevronDown,
   Check,
 } from "lucide-react";
 
@@ -87,6 +88,32 @@ export function BudgetModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
+  // Custom Dropdown states
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
+  const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+  const monthDropdownRef = useRef<HTMLDivElement>(null);
+  const yearDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close custom dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        monthDropdownRef.current &&
+        !monthDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsMonthDropdownOpen(false);
+      }
+      if (
+        yearDropdownRef.current &&
+        !yearDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsYearDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Load available expense categories
   useEffect(() => {
     if (!isBudgetModalOpen) return;
@@ -118,6 +145,8 @@ export function BudgetModal() {
   // Sync state when editing or opening
   useEffect(() => {
     if (isBudgetModalOpen) {
+      setIsMonthDropdownOpen(false);
+      setIsYearDropdownOpen(false);
       if (budgetModalMode === "EDIT" && editingBudget) {
         setSelectedCategoryId(editingBudget.categoryId);
         setAmountStr(editingBudget.limit.toString());
@@ -135,12 +164,20 @@ export function BudgetModal() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isBudgetModalOpen) {
+        if (isMonthDropdownOpen) {
+          setIsMonthDropdownOpen(false);
+          return;
+        }
+        if (isYearDropdownOpen) {
+          setIsYearDropdownOpen(false);
+          return;
+        }
         closeBudgetModal();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isBudgetModalOpen, closeBudgetModal]);
+  }, [isBudgetModalOpen, isMonthDropdownOpen, isYearDropdownOpen, closeBudgetModal]);
 
   if (!isBudgetModalOpen) return null;
 
@@ -154,6 +191,16 @@ export function BudgetModal() {
   const handleQuickAdd = (additional: number) => {
     const nextVal = currentNumericAmount + additional;
     setAmountStr(nextVal.toString());
+  };
+
+  const toggleMonthDropdown = () => {
+    setIsMonthDropdownOpen((prev) => !prev);
+    setIsYearDropdownOpen(false);
+  };
+
+  const toggleYearDropdown = () => {
+    setIsYearDropdownOpen((prev) => !prev);
+    setIsMonthDropdownOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -228,7 +275,7 @@ export function BudgetModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 text-foreground animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+        className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 text-foreground animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -244,7 +291,7 @@ export function BudgetModal() {
                     ? "Sesuaikan Batas Anggaran"
                     : "Tambah Batas Anggaran Baru"}
                 </h3>
-                <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2 py-0.5 text-[10px] font-bold text-teal-600 dark:text-teal-400">
+                <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2.5 py-0.5 text-[10px] font-bold text-teal-600 dark:text-teal-400">
                   {MONTH_NAMES[month - 1]} {year}
                 </span>
               </div>
@@ -278,40 +325,44 @@ export function BudgetModal() {
                 )}
               </label>
 
-              <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
-                {categories.map((cat) => {
-                  const Icon = resolveCategoryIcon(cat.icon);
-                  const isSelected = selectedCategoryId === cat.id;
+              {/* Enhanced Container with padding to prevent border & ring clipping */}
+              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/30 p-2 max-h-52 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.map((cat) => {
+                    const Icon = resolveCategoryIcon(cat.icon);
+                    const isSelected = selectedCategoryId === cat.id;
 
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setSelectedCategoryId(cat.id)}
-                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        isSelected
-                          ? "border-teal-500 bg-teal-500/10 text-teal-900 dark:text-teal-100 ring-1 ring-teal-500"
-                          : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <div
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-                        style={{
-                          backgroundColor: `${cat.color}20`,
-                          color: cat.color,
-                        }}
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setSelectedCategoryId(cat.id)}
+                        className={cn(
+                          "flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer relative",
+                          isSelected
+                            ? "border-teal-500 bg-teal-500/10 text-teal-900 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs font-semibold"
+                            : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 text-muted-foreground hover:text-foreground"
+                        )}
                       >
-                        <Icon className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-xs font-medium truncate flex-1">
-                        {cat.name}
-                      </span>
-                      {isSelected && (
-                        <Check className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
+                        <div
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                          style={{
+                            backgroundColor: `${cat.color}20`,
+                            color: cat.color,
+                          }}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="text-xs font-medium truncate flex-1">
+                          {cat.name}
+                        </span>
+                        {isSelected && (
+                          <Check className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0 ml-1" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           ) : (
@@ -427,45 +478,119 @@ export function BudgetModal() {
             </div>
           )}
 
-          {/* PERIOD SELECTION (CREATE MODE ONLY) */}
+          {/* CUSTOM PROFESSIONAL PERIOD SELECTION (CREATE MODE ONLY) */}
           {budgetModalMode === "CREATE" && (
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="space-y-1.5">
+              {/* BULAN TARGET DROPDOWN */}
+              <div className="space-y-1.5 relative" ref={monthDropdownRef}>
                 <label className="text-xs font-semibold text-muted-foreground">
                   Bulan Target
                 </label>
-                <div className="relative">
-                  <select
-                    value={month}
-                    onChange={(e) => setMonth(parseInt(e.target.value, 10))}
-                    className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-background px-3 text-xs font-medium text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  >
-                    {MONTH_NAMES.map((name, idx) => (
-                      <option key={name} value={idx + 1}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <button
+                  type="button"
+                  onClick={toggleMonthDropdown}
+                  className={cn(
+                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-500",
+                    isMonthDropdownOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/20"
+                  )}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <Calendar className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                    <span>{MONTH_NAMES[month - 1]}</span>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+                      isMonthDropdownOpen && "rotate-180 text-foreground"
+                    )}
+                  />
+                </button>
+
+                {/* Floating Month Menu */}
+                {isMonthDropdownOpen && (
+                  <div className="absolute bottom-full mb-1.5 left-0 z-50 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-56 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                    {MONTH_NAMES.map((name, idx) => {
+                      const isSelected = month === idx + 1;
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => {
+                            setMonth(idx + 1);
+                            setIsMonthDropdownOpen(false);
+                          }}
+                          className={cn(
+                            "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
+                            isSelected
+                              ? "bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300 font-bold"
+                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-foreground"
+                          )}
+                        >
+                          <span>{name}</span>
+                          {isSelected && (
+                            <Check className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              <div className="space-y-1.5">
+              {/* TAHUN TARGET DROPDOWN */}
+              <div className="space-y-1.5 relative" ref={yearDropdownRef}>
                 <label className="text-xs font-semibold text-muted-foreground">
                   Tahun Target
                 </label>
-                <div className="relative">
-                  <select
-                    value={year}
-                    onChange={(e) => setYear(parseInt(e.target.value, 10))}
-                    className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-background px-3 text-xs font-medium text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  >
-                    {[2025, 2026, 2027].map((yr) => (
-                      <option key={yr} value={yr}>
-                        {yr}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <button
+                  type="button"
+                  onClick={toggleYearDropdown}
+                  className={cn(
+                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-500",
+                    isYearDropdownOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/20"
+                  )}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <CalendarDays className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                    <span>{year}</span>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+                      isYearDropdownOpen && "rotate-180 text-foreground"
+                    )}
+                  />
+                </button>
+
+                {/* Floating Year Menu */}
+                {isYearDropdownOpen && (
+                  <div className="absolute bottom-full mb-1.5 left-0 z-50 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                    {[2025, 2026, 2027].map((yr) => {
+                      const isSelected = year === yr;
+                      return (
+                        <button
+                          key={yr}
+                          type="button"
+                          onClick={() => {
+                            setYear(yr);
+                            setIsYearDropdownOpen(false);
+                          }}
+                          className={cn(
+                            "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
+                            isSelected
+                              ? "bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300 font-bold"
+                              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-foreground"
+                          )}
+                        >
+                          <span>{yr}</span>
+                          {isSelected && (
+                            <Check className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
