@@ -552,7 +552,6 @@ export function TransactionModal() {
       setDescription("");
       closeTransactionModal();
       router.refresh();
-      // Dispatch custom event to notify client components
       window.dispatchEvent(new CustomEvent("fintrack:transaction-created"));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memproses transaksi";
@@ -565,11 +564,11 @@ export function TransactionModal() {
   return (
     <div
       onClick={closeTransactionModal}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200 cursor-pointer overflow-hidden"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 text-foreground animate-in zoom-in-95 duration-200 cursor-default"
+        className="w-full sm:w-[500px] max-w-lg rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-6 text-foreground animate-in zoom-in-95 duration-200 cursor-default"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3.5">
@@ -596,7 +595,7 @@ export function TransactionModal() {
             type="button"
             onClick={() => setType("EXPENSE")}
             className={cn(
-              "flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all cursor-pointer",
+              "flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-colors cursor-pointer",
               type === "EXPENSE"
                 ? "bg-rose-500 text-white shadow-xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-white/40 dark:hover:bg-slate-800/60"
@@ -610,7 +609,7 @@ export function TransactionModal() {
             type="button"
             onClick={() => setType("INCOME")}
             className={cn(
-              "flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all cursor-pointer",
+              "flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-colors cursor-pointer",
               type === "INCOME"
                 ? "bg-emerald-500 text-white shadow-xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-white/40 dark:hover:bg-slate-800/60"
@@ -624,7 +623,7 @@ export function TransactionModal() {
             type="button"
             onClick={() => setType("TRANSFER")}
             className={cn(
-              "flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all cursor-pointer",
+              "flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-colors cursor-pointer",
               type === "TRANSFER"
                 ? "bg-sky-500 text-white shadow-xs"
                 : "text-muted-foreground hover:text-foreground hover:bg-white/40 dark:hover:bg-slate-800/60"
@@ -636,9 +635,9 @@ export function TransactionModal() {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
           {/* Nominal Input */}
-          <div className="space-y-1.5">
+          <div className="flex flex-col gap-1.5">
             <label className="block text-xs font-semibold text-muted-foreground">
               Nominal Transaksi (IDR)
             </label>
@@ -671,16 +670,16 @@ export function TransactionModal() {
           ) : type === "TRANSFER" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Dari Dompet */}
-              <div className="space-y-1.5 relative" ref={walletDropdownRef}>
+              <div className="flex flex-col gap-1.5 relative min-w-0" ref={walletDropdownRef}>
                 <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Wallet className="h-3.5 w-3.5 text-sky-500" />
+                  <Wallet className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                   <span>Dari Dompet</span>
                 </label>
                 <button
                   type="button"
                   onClick={toggleWalletDropdown}
                   className={cn(
-                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-all cursor-pointer",
+                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-colors cursor-pointer",
                     isWalletDropdownOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/20"
                   )}
                 >
@@ -716,7 +715,7 @@ export function TransactionModal() {
 
                 {/* Custom Dari Dompet Popover Menu */}
                 {isWalletDropdownOpen && (
-                  <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-56 overflow-y-auto [scrollbar-width:thin] animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-52 overflow-y-auto [scrollbar-width:thin] animate-in fade-in zoom-in-95 duration-150">
                     {wallets.map((w) => {
                       const isSelected = w.id === walletId;
                       const Icon = resolveWalletIcon(w.type, w.name);
@@ -763,16 +762,16 @@ export function TransactionModal() {
               </div>
 
               {/* Ke Dompet Tujuan */}
-              <div className="space-y-1.5 relative" ref={toWalletDropdownRef}>
+              <div className="flex flex-col gap-1.5 relative min-w-0" ref={toWalletDropdownRef}>
                 <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <ArrowRightLeft className="h-3.5 w-3.5 text-sky-500" />
+                  <ArrowRightLeft className="h-3.5 w-3.5 text-sky-500 shrink-0" />
                   <span>Ke Dompet Tujuan</span>
                 </label>
                 <button
                   type="button"
                   onClick={toggleToWalletDropdown}
                   className={cn(
-                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-all cursor-pointer",
+                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-colors cursor-pointer",
                     isToWalletDropdownOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/20"
                   )}
                 >
@@ -808,7 +807,7 @@ export function TransactionModal() {
 
                 {/* Custom Ke Dompet Tujuan Popover Menu */}
                 {isToWalletDropdownOpen && (
-                  <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-56 overflow-y-auto [scrollbar-width:thin] animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-52 overflow-y-auto [scrollbar-width:thin] animate-in fade-in zoom-in-95 duration-150">
                     {wallets
                       .filter((w) => w.id !== walletId)
                       .map((w) => {
@@ -859,16 +858,16 @@ export function TransactionModal() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Sumber Dompet */}
-              <div className="space-y-1.5 relative" ref={walletDropdownRef}>
+              <div className="flex flex-col gap-1.5 relative min-w-0" ref={walletDropdownRef}>
                 <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Wallet className="h-3.5 w-3.5 text-emerald-500" />
+                  <Wallet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                   <span>Sumber Dompet</span>
                 </label>
                 <button
                   type="button"
                   onClick={toggleWalletDropdown}
                   className={cn(
-                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-all cursor-pointer",
+                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-colors cursor-pointer",
                     isWalletDropdownOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/20"
                   )}
                 >
@@ -904,7 +903,7 @@ export function TransactionModal() {
 
                 {/* Custom Sumber Dompet Popover Menu */}
                 {isWalletDropdownOpen && (
-                  <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-56 overflow-y-auto [scrollbar-width:thin] animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-52 overflow-y-auto [scrollbar-width:thin] animate-in fade-in zoom-in-95 duration-150">
                     {wallets.map((w) => {
                       const isSelected = w.id === walletId;
                       const Icon = resolveWalletIcon(w.type, w.name);
@@ -951,16 +950,16 @@ export function TransactionModal() {
               </div>
 
               {/* Kategori */}
-              <div className="space-y-1.5 relative" ref={categoryDropdownRef}>
+              <div className="flex flex-col gap-1.5 relative min-w-0" ref={categoryDropdownRef}>
                 <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Tag className="h-3.5 w-3.5 text-rose-500" />
+                  <Tag className="h-3.5 w-3.5 text-rose-500 shrink-0" />
                   <span>Kategori</span>
                 </label>
                 <button
                   type="button"
                   onClick={toggleCategoryDropdown}
                   className={cn(
-                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-all cursor-pointer",
+                    "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-colors cursor-pointer",
                     isCategoryDropdownOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/20"
                   )}
                 >
@@ -993,7 +992,7 @@ export function TransactionModal() {
 
                 {/* Custom Kategori Popover Menu */}
                 {isCategoryDropdownOpen && (
-                  <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-56 overflow-y-auto [scrollbar-width:thin] animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute top-full mt-1.5 left-0 z-50 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 max-h-52 overflow-y-auto [scrollbar-width:thin] animate-in fade-in zoom-in-95 duration-150">
                     {filteredCategories.map((cat) => {
                       const isSelected = cat.id === categoryId;
                       const Icon = resolveCategoryIcon(cat.icon);
@@ -1039,16 +1038,16 @@ export function TransactionModal() {
           {/* Date & Note */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Custom Date Picker */}
-            <div className="space-y-1.5 relative" ref={datePickerRef}>
+            <div className="flex flex-col gap-1.5 relative min-w-0" ref={datePickerRef}>
               <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-teal-500" />
+                <Calendar className="h-3.5 w-3.5 text-teal-500 shrink-0" />
                 <span>Tanggal</span>
               </label>
               <button
                 type="button"
                 onClick={toggleDatePicker}
                 className={cn(
-                  "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-all cursor-pointer",
+                  "w-full flex h-10 items-center justify-between px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background hover:bg-slate-50 dark:hover:bg-slate-800/50 text-xs font-semibold text-foreground transition-colors cursor-pointer",
                   isDatePickerOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/20"
                 )}
               >
@@ -1066,7 +1065,7 @@ export function TransactionModal() {
 
               {/* Custom Date Picker Popover (Floats Above) */}
               {isDatePickerOpen && (
-                <div className="absolute bottom-full mb-1.5 left-0 z-50 w-72 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute bottom-full mb-1.5 left-0 z-50 w-72 max-w-[calc(100vw-3rem)] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
                   {/* Month & Year Navigation */}
                   <div className="flex items-center justify-between px-1">
                     <button
@@ -1152,9 +1151,9 @@ export function TransactionModal() {
             </div>
 
             {/* Catatan / Keterangan */}
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5 min-w-0">
               <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span>Catatan / Keterangan</span>
               </label>
               <Input
@@ -1182,7 +1181,7 @@ export function TransactionModal() {
               type="submit"
               disabled={isSubmitting || isLoadingData || rawAmount <= 0}
               className={cn(
-                "h-10 rounded-xl px-5 text-xs font-bold gap-2 text-white shadow-xs transition-all cursor-pointer",
+                "h-10 rounded-xl px-5 text-xs font-bold gap-2 text-white shadow-xs transition-colors cursor-pointer",
                 type === "INCOME"
                   ? "bg-emerald-600 hover:bg-emerald-700"
                   : type === "TRANSFER"
