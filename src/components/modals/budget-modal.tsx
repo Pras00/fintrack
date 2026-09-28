@@ -30,7 +30,8 @@ import {
   CalendarDays,
   ChevronDown,
   Check,
-  Sparkles,
+  SlidersHorizontal,
+  Bookmark,
   Tv,
   Music,
   Film,
@@ -137,7 +138,7 @@ const CURATED_ICONS: Array<{
   { key: "graduation-cap", label: "Pendidikan & Kursus", icon: GraduationCap },
   { key: "book-open", label: "Buku & Literasi", icon: BookOpen },
   { key: "palette", label: "Seni & Kerajinan", icon: Palette },
-  { key: "sparkles", label: "Kecantikan & Skincare", icon: Sparkles },
+  { key: "bookmark", label: "Pos Khusus & Tabungan", icon: Bookmark },
   { key: "tag", label: "Umum / Lainnya", icon: Tag },
 ];
 
@@ -184,7 +185,7 @@ export function BudgetModal() {
 
   // Custom Category State (for "Pengeluaran Lainnya")
   const [customCategoryName, setCustomCategoryName] = useState("");
-  const [customCategoryIcon, setCustomCategoryIcon] = useState("sparkles");
+  const [customCategoryIcon, setCustomCategoryIcon] = useState("tag");
   const [customCategoryColor, setCustomCategoryColor] = useState("#10B981");
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
 
@@ -263,7 +264,7 @@ export function BudgetModal() {
       } else {
         setAmountStr("");
         setCustomCategoryName("");
-        setCustomCategoryIcon("sparkles");
+        setCustomCategoryIcon("tag");
         setCustomCategoryColor("#10B981");
         setMonth(9);
         setYear(2026);
@@ -505,7 +506,7 @@ export function BudgetModal() {
                 <div className="mt-3 rounded-2xl border border-teal-500/30 bg-teal-500/5 p-4 space-y-3.5 animate-in fade-in zoom-in-95 duration-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-teal-700 dark:text-teal-300">
-                      <Sparkles className="h-4 w-4 shrink-0" />
+                      <SlidersHorizontal className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
                       <span className="text-xs font-bold">
                         Kustomisasi Kategori Pengeluaran
                       </span>
@@ -602,7 +603,7 @@ export function BudgetModal() {
                       <label className="text-[11px] font-semibold text-muted-foreground">
                         Warna Aksen Kategori
                       </label>
-                      <div className="flex items-center gap-1.5 h-10 px-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-background overflow-x-auto">
+                      <div className="flex items-center gap-2 h-11 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-background overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                         {CURATED_COLORS.map((c) => {
                           const isSelected = customCategoryColor === c.hex;
                           return (
@@ -614,7 +615,7 @@ export function BudgetModal() {
                               className={cn(
                                 "h-6 w-6 rounded-full shrink-0 transition-transform cursor-pointer relative flex items-center justify-center",
                                 isSelected
-                                  ? "scale-110 ring-2 ring-offset-2 ring-teal-500"
+                                  ? "scale-105 ring-2 ring-offset-2 ring-teal-500 dark:ring-offset-slate-900"
                                   : "hover:scale-105 opacity-80 hover:opacity-100"
                               )}
                               style={{ backgroundColor: c.hex }}

@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import {
   Plus,
   Target,
-  Sparkles,
+  Bookmark,
   AlertTriangle,
   CheckCircle2,
   AlertCircle,
@@ -123,7 +123,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   compass: Compass,
   "book-open": BookOpen,
   palette: Palette,
-  sparkles: Sparkles,
+  bookmark: Bookmark,
   "more-horizontal": MoreHorizontal,
 };
 
