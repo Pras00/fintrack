@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    /* Sovereign Ledger - Light Mode Palette */
+    --background: 210 40% 98%;          /* #F8FAFC - Canvas Base */
+    --foreground: 222 47% 11%;          /* #0F172A - Deep Slate Primary */
+    --card: 0 0% 100%;                  /* #FFFFFF - Card Surface */
+    --card-foreground: 222 47% 11%;     /* #0F172A */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 222 47% 11%;             /* #0F172A - Executive Dark */
+    --primary-foreground: 0 0% 100%;    /* #FFFFFF */
+    --secondary: 175 84% 32%;           /* #0D9488 - Crisp Teal */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 40% 96.1%;             /* #F1F5F9 - Subtle Surface Accent */
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748B - Slate Muted */
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 347 77% 50%;         /* #E11D48 - Refined Rose */
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;        /* #E2E8F0 - Hairline Border */
+    --input: 215 25% 85%;               /* #CBD5E1 */
+    --ring: 222 47% 11%;                /* #0F172A */
+    --radius: 1rem;                     /* 16px corner radius for modules */
+
+    --income: 175 84% 32%;              /* #0D9488 */
+    --expense: 347 77% 50%;             /* #E11D48 */
+    --transfer: 217 91% 60%;            /* #2563EB */
+  }
+
+  .dark {
+    /* Sovereign Ledger - Dark Mode Palette */
+    --background: 224 71% 4%;           /* Deep Canvas */
+    --foreground: 210 40% 98%;          /* #F8FAFC */
+    --card: 222 47% 7%;                 /* #0F172A Layer */
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 7%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 0 0% 100%;               /* Crisp White */
+    --primary-foreground: 222 47% 11%;
+    --secondary: 175 75% 42%;           /* #14B8A6 */
+    --secondary-foreground: 222 47% 11%;
+    --muted: 217.2 32.6% 12%;
+    --muted-foreground: 215 20.2% 65.1%;/* #94A3B8 */
+    --accent: 217.2 32.6% 14%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 347 77% 60%;         /* #FB7185 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 217.2 32.6% 16%;
+    --input: 217.2 32.6% 16%;
+    --ring: 175 75% 42%;
+
+    --income: 175 75% 45%;              /* Teal Glow */
+    --expense: 347 77% 60%;             /* Rose Glow */
+    --transfer: 217 91% 65%;
+  }
+}
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-income: hsl(var(--income));
+  --color-expense: hsl(var(--expense));
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), monospace;
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 8px);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum" 1, "cv05" 1;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv05" 1;
+}
