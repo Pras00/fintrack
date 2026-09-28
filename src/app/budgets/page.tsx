@@ -14,6 +14,8 @@ import {
 import { toast } from "sonner";
 import {
   Plus,
+  Target,
+  Sparkles,
   AlertTriangle,
   CheckCircle2,
   AlertCircle,
@@ -32,8 +34,37 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
-  Sparkles,
-  Target,
+  Tv,
+  Music,
+  Film,
+  Ticket,
+  Home,
+  Baby,
+  Wrench,
+  Zap,
+  Bath,
+  Smartphone,
+  Laptop,
+  Camera,
+  Headphones,
+  Wifi,
+  Dog,
+  Cat,
+  Dumbbell,
+  Activity,
+  Pill,
+  Bike,
+  Coffee,
+  Pizza,
+  Shirt,
+  Gift,
+  Plane,
+  Fuel,
+  Bus,
+  Compass,
+  BookOpen,
+  Palette,
+  MoreHorizontal,
 } from "lucide-react";
 import type { BudgetItem } from "@/types";
 
@@ -52,27 +83,53 @@ const MONTH_NAMES = [
   "Desember",
 ];
 
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  utensils: Utensils,
+  receipt: Receipt,
+  "shopping-bag": ShoppingBag,
+  car: Car,
+  "gamepad-2": Gamepad2,
+  "heart-pulse": HeartPulse,
+  "graduation-cap": GraduationCap,
+  briefcase: Briefcase,
+  tag: Tag,
+  tv: Tv,
+  music: Music,
+  film: Film,
+  ticket: Ticket,
+  home: Home,
+  baby: Baby,
+  wrench: Wrench,
+  zap: Zap,
+  bath: Bath,
+  smartphone: Smartphone,
+  laptop: Laptop,
+  camera: Camera,
+  headphones: Headphones,
+  wifi: Wifi,
+  dog: Dog,
+  cat: Cat,
+  dumbbell: Dumbbell,
+  activity: Activity,
+  pill: Pill,
+  bike: Bike,
+  coffee: Coffee,
+  pizza: Pizza,
+  shirt: Shirt,
+  gift: Gift,
+  plane: Plane,
+  fuel: Fuel,
+  bus: Bus,
+  compass: Compass,
+  "book-open": BookOpen,
+  palette: Palette,
+  sparkles: Sparkles,
+  "more-horizontal": MoreHorizontal,
+};
+
 function resolveCategoryIcon(iconName?: string) {
-  switch (iconName) {
-    case "utensils":
-      return Utensils;
-    case "receipt":
-      return Receipt;
-    case "shopping-bag":
-      return ShoppingBag;
-    case "car":
-      return Car;
-    case "gamepad-2":
-      return Gamepad2;
-    case "heart-pulse":
-      return HeartPulse;
-    case "graduation-cap":
-      return GraduationCap;
-    case "briefcase":
-      return Briefcase;
-    default:
-      return Tag;
-  }
+  if (!iconName) return Tag;
+  return ICON_MAP[iconName] || Tag;
 }
 
 export default function BudgetsPage() {

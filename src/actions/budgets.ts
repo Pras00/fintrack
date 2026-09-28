@@ -25,6 +25,9 @@ export interface BudgetCategoryOption {
 
 const budgetSchema = z.object({
   categoryId: z.string().min(1, "Kategori wajib dipilih"),
+  customCategoryName: z.string().optional(),
+  customCategoryIcon: z.string().optional(),
+  customCategoryColor: z.string().optional(),
   amountLimit: z.number().positive("Nominal limit harus lebih besar dari 0"),
   month: z.number().min(1).max(12),
   year: z.number().min(2020).max(2035),
@@ -173,6 +176,15 @@ export async function getBudgetCategoriesAction(): Promise<BudgetCategoryOption[
       },
     });
 
+    // Pindahkan kategori yang bernama "Pengeluaran Lainnya" / "Lainnya" ke urutan paling terakhir
+    const otherIndex = categories.findIndex((c) =>
+      c.name.toLowerCase().includes("lainnya")
+    );
+    if (otherIndex !== -1) {
+      const [otherCat] = categories.splice(otherIndex, 1);
+      categories.push(otherCat);
+    }
+
     return categories;
   } catch (error) {
     console.error("Error getBudgetCategoriesAction:", error);
@@ -195,12 +207,51 @@ export async function createBudgetAction(
       return { success: false, error: "Pengguna belum terautentikasi" };
     }
 
+    let targetCategoryId = validated.categoryId;
+
+    // Jika user menginputkan nama kategori kustom (dari opsi "Pengeluaran Lainnya")
+    if (validated.customCategoryName && validated.customCategoryName.trim()) {
+      const trimmedName = validated.customCategoryName.trim();
+
+      // Cek apakah user sudah punya kategori dengan nama tersebut
+      const existingCustom = await prisma.category.findFirst({
+        where: {
+          userId: user.id,
+          name: { equals: trimmedName, mode: "insensitive" },
+        },
+      });
+
+      if (existingCustom) {
+        targetCategoryId = existingCustom.id;
+        if (validated.customCategoryIcon || validated.customCategoryColor) {
+          await prisma.category.update({
+            where: { id: existingCustom.id },
+            data: {
+              icon: validated.customCategoryIcon || existingCustom.icon,
+              color: validated.customCategoryColor || existingCustom.color,
+            },
+          });
+        }
+      } else {
+        const newCat = await prisma.category.create({
+          data: {
+            name: trimmedName,
+            type: "EXPENSE",
+            icon: validated.customCategoryIcon || "tag",
+            color: validated.customCategoryColor || "#10B981",
+            userId: user.id,
+          },
+        });
+        targetCategoryId = newCat.id;
+      }
+    }
+
     // Upsert budget (buat baru atau perbarui jika sudah ada untuk kategori & bulan yang sama)
     const budget = await prisma.budget.upsert({
       where: {
         userId_categoryId_month_year: {
           userId: user.id,
-          categoryId: validated.categoryId,
+          categoryId: targetCategoryId,
           month: validated.month,
           year: validated.year,
         },
@@ -212,7 +263,7 @@ export async function createBudgetAction(
         amountLimit: validated.amountLimit,
         month: validated.month,
         year: validated.year,
-        categoryId: validated.categoryId,
+        categoryId: targetCategoryId,
         userId: user.id,
       },
     });
