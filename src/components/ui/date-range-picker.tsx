@@ -1,0 +1,434 @@
+"use client";
+
+import { useState, useRef, useEffect, useMemo } from "react";
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Check,
+  RotateCcw,
+  Clock,
+} from "lucide-react";
+import {
+  useFilterStore,
+  DatePreset,
+  ID_MONTHS_FULL,
+  ID_MONTHS_SHORT,
+  getPresetDates,
+} from "@/stores/use-filter-store";
+import { cn } from "@/lib/utils";
+
+const DAYS_HEADER = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+
+export function DateRangePicker() {
+  const {
+    datePreset,
+    startDate,
+    endDate,
+    dateLabel,
+    setDatePreset,
+    setCustomDateRange,
+    setSingleDate,
+    resetFilters,
+  } = useFilterStore();
+
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Atomic state for temporary date selection
+  const [selectedRange, setSelectedRange] = useState<{
+    start: string | null;
+    end: string | null;
+  }>({
+    start: startDate,
+    end: endDate,
+  });
+
+  const [tempPreset, setTempPreset] = useState<DatePreset>(datePreset);
+
+  // Calendar View month & year navigation
+  const [viewDate, setViewDate] = useState<Date>(() => {
+    if (startDate) {
+      const [y, m] = startDate.split("-").map(Number);
+      return new Date(y, m - 1, 1);
+    }
+    return new Date(2026, 8, 1); // Default September 2026
+  });
+
+  // Sync state whenever popover opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedRange({ start: startDate, end: endDate });
+      setTempPreset(datePreset);
+      if (startDate) {
+        const [y, m] = startDate.split("-").map(Number);
+        setViewDate(new Date(y, m - 1, 1));
+      }
+    }
+  }, [isOpen, startDate, endDate, datePreset]);
+
+  // Click outside and Escape key handler
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const viewYear = viewDate.getFullYear();
+  const viewMonth = viewDate.getMonth();
+
+  const handlePrevMonth = () => {
+    setViewDate(new Date(viewYear, viewMonth - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setViewDate(new Date(viewYear, viewMonth + 1, 1));
+  };
+
+  // Generate calendar cells for the active month view
+  const calendarCells = useMemo(() => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay();
+    // Monday as index 0 (0: Sun -> 6, 1: Mon -> 0, ..., 6: Sat -> 5)
+    const startOffset = (firstDayIndex + 6) % 7;
+
+    const cells: Array<{
+      dateStr: string;
+      dayNumber: number;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+    }> = [];
+
+    // Previous month padding
+    const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
+    for (let i = startOffset - 1; i >= 0; i--) {
+      const d = prevMonthDays - i;
+      const prevM = viewMonth === 0 ? 11 : viewMonth - 1;
+      const prevY = viewMonth === 0 ? viewYear - 1 : viewYear;
+      cells.push({
+        dateStr: `${prevY}-${pad(prevM + 1)}-${pad(d)}`,
+        dayNumber: d,
+        isCurrentMonth: false,
+        isToday: false,
+      });
+    }
+
+    // Current month days
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${viewYear}-${pad(viewMonth + 1)}-${pad(d)}`;
+      cells.push({
+        dateStr,
+        dayNumber: d,
+        isCurrentMonth: true,
+        isToday: dateStr === todayStr,
+      });
+    }
+
+    // Next month padding to fill a clean 35 or 42 grid
+    const remaining = (cells.length > 35 ? 42 : 35) - cells.length;
+    for (let d = 1; d <= remaining; d++) {
+      const nextM = viewMonth === 11 ? 0 : viewMonth + 1;
+      const nextY = viewMonth === 11 ? viewYear + 1 : viewYear;
+      cells.push({
+        dateStr: `${nextY}-${pad(nextM + 1)}-${pad(d)}`,
+        dayNumber: d,
+        isCurrentMonth: false,
+        isToday: false,
+      });
+    }
+
+    return cells;
+  }, [viewYear, viewMonth]);
+
+  // Atomic date click handler: allows Single Date or Date Range
+  const handleDateClick = (dateStr: string) => {
+    setTempPreset("custom");
+
+    setSelectedRange((prev) => {
+      // If no start, or if a range (start !== end) is already selected:
+      // Start fresh selection with dateStr (Single Date mode)
+      if (!prev.start || (prev.start && prev.end && prev.start !== prev.end)) {
+        return { start: dateStr, end: dateStr };
+      }
+
+      // If single date was selected (prev.start === prev.end):
+      if (dateStr === prev.start) {
+        return prev;
+      }
+
+      if (dateStr < prev.start) {
+        return { start: dateStr, end: prev.start };
+      } else {
+        return { start: prev.start, end: dateStr };
+      }
+    });
+  };
+
+  // Apply the selected filter
+  const handleApply = () => {
+    if (tempPreset !== "custom") {
+      setDatePreset(tempPreset);
+    } else if (selectedRange.start && selectedRange.end) {
+      if (selectedRange.start === selectedRange.end) {
+        setSingleDate(selectedRange.start);
+      } else {
+        setCustomDateRange(selectedRange.start, selectedRange.end);
+      }
+    }
+    setIsOpen(false);
+  };
+
+  // Preset selector
+  const handlePresetSelect = (preset: DatePreset) => {
+    setTempPreset(preset);
+    const range = getPresetDates(preset);
+    setSelectedRange({ start: range.startDate, end: range.endDate });
+
+    if (range.startDate) {
+      const [y, m] = range.startDate.split("-").map(Number);
+      setViewDate(new Date(y, m - 1, 1));
+    }
+  };
+
+  // Summary Text
+  const summaryText = useMemo(() => {
+    if (tempPreset !== "custom") {
+      return getPresetDates(tempPreset).label;
+    }
+    const { start, end } = selectedRange;
+    if (start && end) {
+      if (start === end) {
+        const [y, m, d] = start.split("-");
+        const mIdx = parseInt(m, 10) - 1;
+        return `Tanggal Tunggal: ${parseInt(d, 10)} ${ID_MONTHS_SHORT[mIdx]} ${y}`;
+      }
+      const [y1, m1, d1] = start.split("-");
+      const [y2, m2, d2] = end.split("-");
+      const mIdx1 = parseInt(m1, 10) - 1;
+      const mIdx2 = parseInt(m2, 10) - 1;
+      const dayDiff =
+        Math.round(
+          (new Date(end).getTime() - new Date(start).getTime()) /
+            (1000 * 60 * 60 * 24)
+        ) + 1;
+      return `Rentang: ${parseInt(d1, 10)} ${ID_MONTHS_SHORT[mIdx1]} – ${parseInt(d2, 10)} ${ID_MONTHS_SHORT[mIdx2]} ${y2} (${dayDiff} hari)`;
+    }
+    return "Pilih tanggal atau rentang waktu";
+  }, [tempPreset, selectedRange]);
+
+  const PRESET_OPTIONS: Array<{ key: DatePreset; label: string }> = [
+    { key: "today", label: "Hari Ini" },
+    { key: "yesterday", label: "Kemarin" },
+    { key: "7d", label: "7 Hari Terakhir" },
+    { key: "30d", label: "30 Hari Terakhir" },
+    { key: "this_month", label: "Bulan Ini (Sep 2026)" },
+    { key: "last_month", label: "Bulan Lalu (Agu 2026)" },
+    { key: "this_year", label: "Tahun 2026" },
+    { key: "all", label: "Semua Waktu" },
+  ];
+
+  return (
+    <div className="relative" ref={containerRef}>
+      {/* TRIGGER BUTTON */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "flex h-10 items-center gap-2 rounded-xl border border-border/80 bg-background/80 hover:bg-muted/50 px-3.5 text-xs font-semibold text-foreground/90 shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-500",
+          isOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/40"
+        )}
+      >
+        <CalendarIcon className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+        <span className="truncate max-w-[150px] sm:max-w-[200px]">
+          {dateLabel}
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+            isOpen && "rotate-180 text-foreground"
+          )}
+        />
+      </button>
+
+      {/* POPOVER PANEL */}
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2.5 z-50 w-[340px] sm:w-[560px] rounded-2xl border border-border/80 bg-popover/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl p-4 sm:p-5 text-foreground animate-in fade-in zoom-in-95 duration-150">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-5">
+            {/* LEFT COLUMN: QUICK PRESETS */}
+            <div className="sm:col-span-4 border-b sm:border-b-0 sm:border-r border-border/60 pb-3 sm:pb-0 sm:pr-4 space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 pb-1.5 block">
+                Pilihan Cepat
+              </span>
+              <div className="space-y-0.5">
+                {PRESET_OPTIONS.map((item) => {
+                  const isSelected = tempPreset === item.key;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => handlePresetSelect(item.key)}
+                      className={cn(
+                        "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
+                        isSelected
+                          ? "bg-teal-500/10 text-teal-700 dark:text-teal-300 font-semibold"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <span>{item.label}</span>
+                      {isSelected && (
+                        <Check className="h-3 w-3 text-teal-600 dark:text-teal-400 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: CALENDAR */}
+            <div className="sm:col-span-8 space-y-3">
+              {/* Header Nav */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  title="Bulan sebelumnya"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                <div className="text-xs font-bold text-foreground tracking-tight">
+                  {ID_MONTHS_FULL[viewMonth]} {viewYear}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  title="Bulan berikutnya"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Day Header Row */}
+              <div className="grid grid-cols-7 text-center">
+                {DAYS_HEADER.map((day) => (
+                  <span
+                    key={day}
+                    className="text-[10px] font-semibold text-muted-foreground py-1"
+                  >
+                    {day}
+                  </span>
+                ))}
+              </div>
+
+              {/* Days Grid */}
+              <div className="grid grid-cols-7 gap-y-1 text-xs">
+                {calendarCells.map((cell, idx) => {
+                  const isStart = selectedRange.start === cell.dateStr;
+                  const isEnd = selectedRange.end === cell.dateStr;
+                  const isSingle = isStart && isEnd;
+                  const inRange =
+                    selectedRange.start &&
+                    selectedRange.end &&
+                    cell.dateStr >= selectedRange.start &&
+                    cell.dateStr <= selectedRange.end;
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleDateClick(cell.dateStr)}
+                      className={cn(
+                        "h-8 flex items-center justify-center transition-all cursor-pointer relative text-xs font-medium select-none",
+                        !cell.isCurrentMonth && "text-muted-foreground/30",
+                        cell.isCurrentMonth &&
+                          !inRange &&
+                          "text-foreground hover:bg-muted hover:rounded-lg",
+                        cell.isToday &&
+                          !inRange &&
+                          "font-bold text-teal-600 dark:text-teal-400",
+                        inRange && "bg-teal-500/15 text-foreground font-semibold",
+                        isStart &&
+                          "rounded-l-lg bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold",
+                        isEnd &&
+                          "rounded-r-lg bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold",
+                        isSingle &&
+                          "rounded-lg bg-teal-600 text-white dark:bg-teal-500 dark:text-slate-950 font-bold"
+                      )}
+                    >
+                      {cell.dayNumber}
+                      {cell.isToday && !inRange && (
+                        <span className="absolute bottom-1 w-1 h-1 rounded-full bg-teal-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* BOTTOM ACTION BAR */}
+          <div className="mt-4 pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span className="font-medium text-foreground text-[11px] truncate">
+                {summaryText}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  resetFilters();
+                  setIsOpen(false);
+                }}
+                className="flex items-center gap-1 h-8 px-2.5 rounded-lg border border-border/70 hover:bg-muted text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                <RotateCcw className="h-3 w-3" />
+                <span>Reset</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleApply}
+                className="flex items-center gap-1 h-8 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white dark:text-slate-950 text-[11px] font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <Check className="h-3 w-3" />
+                <span>Terapkan Filter</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

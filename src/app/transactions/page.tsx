@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatRupiah } from "@/lib/utils";
 import { useModalStore } from "@/stores/use-modal-store";
+import { useFilterStore } from "@/stores/use-filter-store";
 import { getTransactionsAction } from "@/actions/transactions";
 import {
   Search,
@@ -97,13 +98,25 @@ export default function TransactionsPage() {
     };
   }, [fetchTransactions]);
 
+  const { startDate, endDate, dateLabel } = useFilterStore();
+
   const filtered = transactions.filter((tx) => {
     const matchesSearch =
       tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.wallet.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === "ALL" || tx.type === selectedType;
-    return matchesSearch && matchesType;
+
+    const matchesDate = (() => {
+      if (!startDate && !endDate) return true;
+      if (!tx.date) return true;
+      const txDateStr = new Date(tx.date).toISOString().split("T")[0];
+      if (startDate && txDateStr < startDate) return false;
+      if (endDate && txDateStr > endDate) return false;
+      return true;
+    })();
+
+    return matchesSearch && matchesType && matchesDate;
   });
 
   const totalIncome = filtered
@@ -249,6 +262,17 @@ export default function TransactionsPage() {
               </button>
             </div>
           </div>
+
+          {/* Active Date Filter Indicator */}
+          {dateLabel && dateLabel !== "Semua Waktu" && (
+            <div className="flex items-center justify-between text-xs pt-2.5 border-t border-border/40 text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+                <span>Filter Tanggal: <strong className="text-foreground">{dateLabel}</strong></span>
+              </span>
+              <span>Menampilkan: <strong className="text-foreground">{filtered.length} transaksi</strong></span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
