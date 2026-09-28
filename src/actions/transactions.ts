@@ -234,6 +234,7 @@ export async function getTransactionsAction(): Promise<TransactionItem[]> {
         type: tx.type,
         amount: parseFloat(tx.amount.toString()),
         date: dateFormatted,
+        rawDate: d.toISOString(),
         iconName: tx.category?.icon || (tx.type === "TRANSFER" ? "arrow-right-left" : "tag"),
       };
     });

@@ -109,8 +109,48 @@ export default function TransactionsPage() {
 
     const matchesDate = (() => {
       if (!startDate && !endDate) return true;
-      if (!tx.date) return true;
-      const txDateStr = new Date(tx.date).toISOString().split("T")[0];
+
+      let txDateStr: string | null = null;
+      if (tx.rawDate) {
+        txDateStr = tx.rawDate.split("T")[0];
+      } else if (tx.date) {
+        // Coba parsing standar ISO / Date
+        const parsed = new Date(tx.date);
+        if (!isNaN(parsed.getTime())) {
+          txDateStr = parsed.toISOString().split("T")[0];
+        } else {
+          // Fallback parsing format lokal Indonesia: "27 Sep 2026, 14.30"
+          const match = tx.date.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+          if (match) {
+            const day = match[1].padStart(2, "0");
+            const monthStr = match[2].toLowerCase();
+            const year = match[3];
+            const monthMap: Record<string, string> = {
+              jan: "01",
+              feb: "02",
+              mar: "03",
+              apr: "04",
+              mei: "05",
+              may: "05",
+              jun: "06",
+              jul: "07",
+              agu: "08",
+              aug: "08",
+              sep: "09",
+              okt: "10",
+              oct: "10",
+              nov: "11",
+              des: "12",
+              dec: "12",
+            };
+            const mKey = monthStr.slice(0, 3);
+            const m = monthMap[mKey] || "01";
+            txDateStr = `${year}-${m}-${day}`;
+          }
+        }
+      }
+
+      if (!txDateStr) return true;
       if (startDate && txDateStr < startDate) return false;
       if (endDate && txDateStr > endDate) return false;
       return true;

@@ -12,6 +12,7 @@ export interface TransactionItem {
   type: TransactionType;
   amount: number;
   date: string;
+  rawDate?: string;
   iconName?: string;
   icon?: LucideIcon;
 }
