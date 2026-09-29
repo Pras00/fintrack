@@ -110,29 +110,25 @@ export function Sidebar() {
 
         {/* User profile capsule */}
         <div className="mt-3 flex items-center justify-between px-1">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-9 w-9 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold border border-emerald-500/30 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-7 w-7 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-xs font-bold border border-emerald-500/30">
               P
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-foreground truncate">Prasz</p>
-              <p className="text-xs text-muted-foreground truncate">Pengguna Terdaftar</p>
+              <p className="text-xs font-semibold text-foreground truncate">Prasz</p>
+              <p className="text-[10px] text-muted-foreground truncate">Pengguna Terdaftar</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Link
-              href="/settings"
-              title="Pengaturan"
-              className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <Settings className="h-4.5 w-4.5" />
+          <div className="flex items-center gap-1">
+            <Link href="/settings" title="Pengaturan" className="text-muted-foreground hover:text-foreground p-1 transition-colors">
+              <Settings className="h-3.5 w-3.5" />
             </Link>
             <button
               onClick={handleLogout}
               title="Keluar dari Akun"
-              className="text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1.5 rounded-lg transition-colors cursor-pointer"
+              className="text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 p-1 transition-colors cursor-pointer"
             >
-              <LogOut className="h-4.5 w-4.5" />
+              <LogOut className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
