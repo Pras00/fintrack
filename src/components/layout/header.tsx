@@ -5,7 +5,7 @@ import { useFilterStore } from "@/stores/use-filter-store";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LogoMark } from "@/components/brand/logo";
+import { Logo } from "@/components/brand/logo";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 import {
@@ -13,17 +13,16 @@ import {
   Calendar,
   Command,
   Menu,
-  PanelLeftOpen,
 } from "lucide-react";
 
 export function Header() {
   const { dateLabel } = useFilterStore();
-  const { toggleMobile, isCollapsed, toggleCollapse } = useSidebarStore();
+  const { isOpen, toggleMobile } = useSidebarStore();
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/70 bg-background/85 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-      {/* Left: Sidebar Toggle, Brand & Title */}
-      <div className="flex items-center gap-2 sm:gap-3">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border/70 bg-background/85 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+      {/* Left: Sidebar Toggle, Brand Logo & Title */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
         {/* Mobile & Tablet Drawer Toggle Button */}
         <button
           type="button"
@@ -35,22 +34,17 @@ export function Header() {
           <Menu className="h-4.5 w-4.5" />
         </button>
 
-        {/* Desktop Sidebar Toggle (shown when sidebar is collapsed) */}
-        {isCollapsed && (
-          <button
-            type="button"
-            onClick={toggleCollapse}
-            aria-label="Buka Sidebar (Ctrl+B)"
-            title="Buka Sidebar (Ctrl+B)"
-            className="hidden lg:flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-card/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 cursor-pointer shadow-2xs active:scale-95 shrink-0"
-          >
-            <PanelLeftOpen className="h-4 w-4" />
-          </button>
-        )}
+        {/* Brand Logo in Header:
+            - ALWAYS visible on Mobile & Tablet (< 1024px)
+            - Visible on Desktop when sidebar is closed (!isOpen) so the logo NEVER disappears! */}
+        <div className={cn("items-center shrink-0", isOpen ? "flex lg:hidden" : "flex")}>
+          <Logo size="sm" showTagline={false} href="/dashboard" />
+        </div>
 
-        <Link href="/dashboard" className="lg:hidden flex items-center shrink-0 hover:opacity-85 transition-opacity">
-          <LogoMark size={28} />
-        </Link>
+        {/* Subtle Separator divider when Logo is shown */}
+        <div className={cn("h-4 w-px bg-border/70 shrink-0", isOpen ? "block lg:hidden" : "block")} />
+
+        {/* Title & Date Subtitle */}
         <div>
           <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-tight">
             Dashboard Keuangan
@@ -59,6 +53,7 @@ export function Header() {
             {dateLabel}
           </span>
         </div>
+
         <span className="hidden sm:inline-block text-muted-foreground text-xs">•</span>
         <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Calendar className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />

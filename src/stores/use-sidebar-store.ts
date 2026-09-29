@@ -1,21 +1,31 @@
 import { create } from "zustand";
 
 interface SidebarState {
-  isMobileOpen: boolean;
-  isCollapsed: boolean;
+  isOpen: boolean;        // Desktop open/closed state (defaults to true)
+  isMobileOpen: boolean;  // Mobile/tablet drawer open/closed state
+  toggleSidebar: () => void;
+  openSidebar: () => void;
+  closeSidebar: () => void;
+  toggleMobile: () => void;
   openMobile: () => void;
   closeMobile: () => void;
-  toggleMobile: () => void;
-  toggleCollapse: () => void;
-  setCollapsed: (collapsed: boolean) => void;
+  toggle: () => void;
 }
 
-export const useSidebarStore = create<SidebarState>((set) => ({
+export const useSidebarStore = create<SidebarState>((set, get) => ({
+  isOpen: true,
   isMobileOpen: false,
-  isCollapsed: false,
+  toggleSidebar: () => set((state) => ({ isOpen: !state.isOpen })),
+  openSidebar: () => set({ isOpen: true }),
+  closeSidebar: () => set({ isOpen: false }),
+  toggleMobile: () => set((state) => ({ isMobileOpen: !state.isMobileOpen })),
   openMobile: () => set({ isMobileOpen: true }),
   closeMobile: () => set({ isMobileOpen: false }),
-  toggleMobile: () => set((state) => ({ isMobileOpen: !state.isMobileOpen })),
-  toggleCollapse: () => set((state) => ({ isCollapsed: !state.isCollapsed })),
-  setCollapsed: (collapsed: boolean) => set({ isCollapsed: collapsed }),
+  toggle: () => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      get().toggleMobile();
+    } else {
+      get().toggleSidebar();
+    }
+  },
 }));
