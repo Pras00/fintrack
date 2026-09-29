@@ -7,21 +7,49 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/brand/logo";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { useSidebarStore } from "@/stores/use-sidebar-store";
 import {
   Plus,
   Calendar,
   Command,
+  Menu,
+  PanelLeftOpen,
 } from "lucide-react";
 
 export function Header() {
   const { dateLabel } = useFilterStore();
+  const { toggleMobile, isCollapsed, toggleCollapse } = useSidebarStore();
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full py-8 items-center justify-between border-b border-border/70 bg-background/85 px-4 sm:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-      {/* Left: Breadcrumbs / Title */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        <Link href="/dashboard" className="lg:hidden flex items-center shrink-0">
-          <LogoMark size={30} />
+    <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/70 bg-background/85 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+      {/* Left: Sidebar Toggle, Brand & Title */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Mobile & Tablet Drawer Toggle Button */}
+        <button
+          type="button"
+          onClick={toggleMobile}
+          aria-label="Buka Menu Navigasi"
+          title="Buka Menu Navigasi"
+          className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-card/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 cursor-pointer shadow-2xs active:scale-95 shrink-0"
+        >
+          <Menu className="h-4.5 w-4.5" />
+        </button>
+
+        {/* Desktop Sidebar Toggle (shown when sidebar is collapsed) */}
+        {isCollapsed && (
+          <button
+            type="button"
+            onClick={toggleCollapse}
+            aria-label="Buka Sidebar (Ctrl+B)"
+            title="Buka Sidebar (Ctrl+B)"
+            className="hidden lg:flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-card/70 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 cursor-pointer shadow-2xs active:scale-95 shrink-0"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </button>
+        )}
+
+        <Link href="/dashboard" className="lg:hidden flex items-center shrink-0 hover:opacity-85 transition-opacity">
+          <LogoMark size={28} />
         </Link>
         <div>
           <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-tight">
