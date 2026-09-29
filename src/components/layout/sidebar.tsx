@@ -264,12 +264,12 @@ export function Sidebar() {
       {/* ========================================================= */}
       <aside
         className={cn(
-          "hidden lg:block relative h-screen shrink-0 border-r border-border/70 bg-card/60 backdrop-blur-md transition-all duration-300 ease-in-out z-30 select-none",
+          "hidden lg:flex flex-col h-screen shrink-0 border-r border-border/70 bg-card transition-all duration-300 ease-in-out z-30 select-none overflow-hidden",
           isOpen ? "w-64" : "w-0 border-r-0"
         )}
       >
-        {/* Inner Content Wrapper (Fixed 256px width, clipped cleanly when aside width is 0) */}
-        <div className="w-64 h-full flex flex-col overflow-hidden">
+        {/* Inner Content Wrapper (Fixed 256px width, strictly clipped when aside is w-0) */}
+        <div className="w-64 h-full flex flex-col shrink-0">
           {/* Brand Header: Clean Full Logo (Logo does not get crowded or disappear) */}
           <div className="flex h-16 shrink-0 items-center px-6 border-b border-border/40">
             <Logo size="md" href="/dashboard" />
@@ -375,30 +375,30 @@ export function Sidebar() {
             </div>
           </div>
         </div>
-
-        {/* ========================================================= */}
-        {/* MIDDLE TOGGLE BUTTON TAB (Placement as in user Image 2)   */}
-        {/* ========================================================= */}
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          aria-label={isOpen ? "Tutup Sidebar (Ctrl+B)" : "Buka Sidebar (Ctrl+B)"}
-          title={isOpen ? "Tutup Sidebar (Ctrl+B)" : "Buka Sidebar (Ctrl+B)"}
-          className={cn(
-            "absolute left-full top-1/2 -translate-y-1/2 z-40",
-            "flex items-center justify-center cursor-pointer select-none",
-            "h-12 w-5.5 rounded-r-xl border-y border-r border-border/80",
-            "bg-card/95 hover:bg-muted dark:bg-slate-900/95 dark:hover:bg-slate-800",
-            "text-muted-foreground hover:text-foreground shadow-md hover:w-6.5 active:scale-95 transition-all duration-200"
-          )}
-        >
-          {isOpen ? (
-            <ChevronLeft className="h-4 w-4 shrink-0 transition-transform" />
-          ) : (
-            <ChevronRight className="h-4 w-4 shrink-0 transition-transform" />
-          )}
-        </button>
       </aside>
+
+      {/* ========================================================= */}
+      {/* DESKTOP MIDDLE TOGGLE BUTTON TAB (Placed outside aside)   */}
+      {/* ========================================================= */}
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        aria-label={isOpen ? "Tutup Sidebar (Ctrl+B)" : "Buka Sidebar (Ctrl+B)"}
+        title={isOpen ? "Tutup Sidebar (Ctrl+B)" : "Buka Sidebar (Ctrl+B)"}
+        className={cn(
+          "hidden lg:flex fixed top-1/2 -translate-y-1/2 z-40 items-center justify-center cursor-pointer select-none",
+          "h-12 w-5.5 rounded-r-xl border-y border-r border-border/80",
+          "bg-card/95 hover:bg-muted dark:bg-slate-900/95 dark:hover:bg-slate-800",
+          "text-muted-foreground hover:text-foreground shadow-md hover:w-6.5 active:scale-95 transition-all duration-300",
+          isOpen ? "left-64" : "left-0"
+        )}
+      >
+        {isOpen ? (
+          <ChevronLeft className="h-4 w-4 shrink-0 transition-transform" />
+        ) : (
+          <ChevronRight className="h-4 w-4 shrink-0 transition-transform" />
+        )}
+      </button>
     </>
   );
 }

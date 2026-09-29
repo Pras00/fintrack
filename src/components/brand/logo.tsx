@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +8,12 @@ interface LogoMarkProps {
 }
 
 export function LogoMark({ size = 36, className }: LogoMarkProps) {
+  const rawId = useId();
+  const safeId = rawId.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const pillarId = `ftPillarGrad_${safeId}`;
+  const topId = `ftTopGrad_${safeId}`;
+  const midId = `ftMidGrad_${safeId}`;
+
   return (
     <svg
       width={size}
@@ -18,6 +24,22 @@ export function LogoMark({ size = 36, className }: LogoMarkProps) {
       className={cn("shrink-0 select-none", className)}
       aria-label="FinTrack Logo"
     >
+      {/* Gradients with unique IDs defined first for 100% reliable SVG rendering */}
+      <defs>
+        <linearGradient id={pillarId} x1="9" y1="8" x2="14.5" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#14B8A6" />
+          <stop offset="1" stopColor="#0D9488" />
+        </linearGradient>
+        <linearGradient id={topId} x1="12" y1="8" x2="30" y2="13.5" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#2DD4BF" />
+          <stop offset="1" stopColor="#0D9488" />
+        </linearGradient>
+        <linearGradient id={midId} x1="12" y1="17.25" x2="24.5" y2="22.75" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#34D399" />
+          <stop offset="1" stopColor="#0D9488" />
+        </linearGradient>
+      </defs>
+
       {/* Background Frame with Sovereign Ledger Depth */}
       <rect width="40" height="40" rx="10" className="fill-[#0F172A] dark:fill-[#0B1120]" />
       <rect
@@ -30,32 +52,16 @@ export function LogoMark({ size = 36, className }: LogoMarkProps) {
       />
 
       {/* Pillar - Left Vertical Anchor (Foundation & Capital) */}
-      <rect x="9" y="8" width="5.5" height="24" rx="2.75" fill="url(#ftPillarGrad)" />
+      <rect x="9" y="8" width="5.5" height="24" rx="2.75" fill={`url(#${pillarId})`} />
 
       {/* Top Beam - Institutional Velocity */}
-      <rect x="12" y="8" width="18" height="5.5" rx="2.75" fill="url(#ftTopGrad)" />
+      <rect x="12" y="8" width="18" height="5.5" rx="2.75" fill={`url(#${topId})`} />
 
       {/* Mid Beam - Liquidity & Tracking Pulse */}
-      <rect x="12" y="17.25" width="12.5" height="5.5" rx="2.75" fill="url(#ftMidGrad)" />
+      <rect x="12" y="17.25" width="12.5" height="5.5" rx="2.75" fill={`url(#${midId})`} />
 
       {/* Sovereign Beacon - Yield Trajectory Accent */}
       <circle cx="28.5" cy="20" r="2.25" fill="#34D399" />
-
-      {/* Gradients */}
-      <defs>
-        <linearGradient id="ftPillarGrad" x1="9" y1="8" x2="14.5" y2="32" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#14B8A6" />
-          <stop offset="1" stopColor="#0D9488" />
-        </linearGradient>
-        <linearGradient id="ftTopGrad" x1="12" y1="8" x2="30" y2="13.5" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#2DD4BF" />
-          <stop offset="1" stopColor="#0D9488" />
-        </linearGradient>
-        <linearGradient id="ftMidGrad" x1="12" y1="17.25" x2="24.5" y2="22.75" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#34D399" />
-          <stop offset="1" stopColor="#0D9488" />
-        </linearGradient>
-      </defs>
     </svg>
   );
 }

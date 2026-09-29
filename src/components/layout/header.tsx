@@ -20,7 +20,7 @@ export function Header() {
   const { isOpen, toggleMobile } = useSidebarStore();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border/70 bg-background/85 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-border/70 bg-background/85 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
       {/* Left: Sidebar Toggle, Brand Logo & Title */}
       <div className="flex items-center gap-2.5 sm:gap-3">
         {/* Mobile & Tablet Drawer Toggle Button */}
@@ -35,14 +35,18 @@ export function Header() {
         </button>
 
         {/* Brand Logo in Header:
-            - ALWAYS visible on Mobile & Tablet (< 1024px)
-            - Visible on Desktop when sidebar is closed (!isOpen) so the logo NEVER disappears! */}
-        <div className={cn("items-center shrink-0", isOpen ? "flex lg:hidden" : "flex")}>
+            - Visible on Mobile & Tablet (< 1024px)
+            - Visible on Desktop ONLY when sidebar is closed (!isOpen)
+            - When sidebar is open on desktop, the sidebar header already has the logo */}
+        <div
+          className={cn(
+            "items-center gap-2.5 shrink-0",
+            isOpen ? "flex lg:hidden" : "flex"
+          )}
+        >
           <Logo size="sm" showTagline={false} href="/dashboard" />
+          <div className="h-4 w-px bg-border/70 shrink-0" />
         </div>
-
-        {/* Subtle Separator divider when Logo is shown */}
-        <div className={cn("h-4 w-px bg-border/70 shrink-0", isOpen ? "block lg:hidden" : "block")} />
 
         {/* Title & Date Subtitle */}
         <div>
