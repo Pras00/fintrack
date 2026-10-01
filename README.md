@@ -1,6 +1,12 @@
-# FinTrack
+<div align="center">
+  <img src="./public/icon.svg" alt="FinTrack Logo" width="72" height="72" />
 
-**FinTrack** adalah aplikasi web manajemen keuangan pribadi (*personal finance tracker*) untuk mencatat transaksi, memantau arus kas (*cashflow*), mengelola rekening dan dompet, serta mengontrol batas anggaran bulanan secara terpusat.
+  # FinTrack
+
+  **Personal Finance & Cashflow Tracker**
+
+  Aplikasi web manajemen keuangan pribadi (*personal finance tracker*) untuk mencatat transaksi, memantau arus kas (*cashflow*), mengelola rekening dan dompet, serta mengontrol batas anggaran bulanan secara terpusat.
+</div>
 
 ---
 
