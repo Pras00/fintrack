@@ -4,7 +4,6 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionToken = request.cookies.get("fintrack_session_token")?.value;
 
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register");
   const isProtectedRoute =
     pathname === "/" ||
     pathname.startsWith("/dashboard") ||
@@ -18,12 +17,6 @@ export function proxy(request: NextRequest) {
   if (isProtectedRoute && !sessionToken) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
-  }
-
-  // Jika sudah login dan mengakses halaman login/register
-  if (isAuthRoute && sessionToken) {
-    const dashboardUrl = new URL("/", request.url);
-    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();

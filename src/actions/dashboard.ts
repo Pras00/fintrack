@@ -47,10 +47,7 @@ const DEFAULT_CATEGORY_COLORS = [
 
 export async function getDashboardData() {
   try {
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     if (!user) return null;
 
@@ -105,10 +102,7 @@ export async function getCashflowChartAction(
   endDateStr?: string | null
 ): Promise<CashflowChartResponse> {
   try {
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     const emptyResult: CashflowChartResponse = {
       points: [],
@@ -246,10 +240,7 @@ export async function getCategoryDistributionAction(
   endDateStr?: string | null
 ): Promise<CategoryDistributionResponse> {
   try {
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     if (!user) return { data: [], totalExpense: 0 };
 

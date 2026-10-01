@@ -178,8 +178,8 @@ export function BudgetModal() {
   const [categories, setCategories] = useState<BudgetCategoryOption[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [amountStr, setAmountStr] = useState("");
-  const [month, setMonth] = useState(9); // Default September
-  const [year, setYear] = useState(2026); // Default 2026
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
+  const [year, setYear] = useState(() => new Date().getFullYear());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
@@ -259,15 +259,15 @@ export function BudgetModal() {
       if (budgetModalMode === "EDIT" && editingBudget) {
         setSelectedCategoryId(editingBudget.categoryId);
         setAmountStr(editingBudget.limit.toString());
-        setMonth(editingBudget.month || 9);
-        setYear(editingBudget.year || 2026);
+        setMonth(editingBudget.month || new Date().getMonth() + 1);
+        setYear(editingBudget.year || new Date().getFullYear());
       } else {
         setAmountStr("");
         setCustomCategoryName("");
         setCustomCategoryIcon("tag");
         setCustomCategoryColor("#10B981");
-        setMonth(9);
-        setYear(2026);
+        setMonth(new Date().getMonth() + 1);
+        setYear(new Date().getFullYear());
       }
     }
   }, [isBudgetModalOpen, budgetModalMode, editingBudget]);
@@ -837,7 +837,7 @@ export function BudgetModal() {
                 {/* Floating Year Menu */}
                 {isYearDropdownOpen && (
                   <div className="absolute bottom-full mb-1.5 left-0 z-50 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-                    {[2025, 2026, 2027].map((yr) => {
+                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((yr) => {
                       const isSelected = year === yr;
                       return (
                         <button

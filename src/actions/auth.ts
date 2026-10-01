@@ -2,10 +2,11 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { createSession, destroySession } from "@/lib/auth";
+import { createSession, destroySession, getCurrentUser } from "@/lib/auth";
 import {
   loginSchema,
   registerSchema,
+  nameSchema,
   LoginInput,
   RegisterInput,
 } from "@/lib/validations/auth";
@@ -37,7 +38,7 @@ export async function loginUser(data: LoginInput): Promise<AuthActionResult> {
     if (!user || !user.password) {
       return {
         success: false,
-        message: "Alamat email atau kata sandi tidak terdaftar.",
+        message: "Email atau kata sandi tidak cocok.",
       };
     }
 
@@ -45,7 +46,7 @@ export async function loginUser(data: LoginInput): Promise<AuthActionResult> {
     if (!isValidPassword) {
       return {
         success: false,
-        message: "Alamat email atau kata sandi tidak cocok.",
+        message: "Email atau kata sandi tidak cocok.",
       };
     }
 
@@ -56,11 +57,10 @@ export async function loginUser(data: LoginInput): Promise<AuthActionResult> {
       message: "Berhasil masuk ke akun FinTrack.",
     };
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Terjadi kendala pada server.";
+    console.error("Error loginUser:", error);
     return {
       success: false,
-      message: errorMessage,
+      message: "Terjadi kendala pada server. Silakan coba lagi.",
     };
   }
 }
@@ -139,11 +139,10 @@ export async function registerUser(
       message: "Pendaftaran berhasil. Selamat datang di FinTrack!",
     };
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Gagal memproses pendaftaran.";
+    console.error("Error registerUser:", error);
     return {
       success: false,
-      message: errorMessage,
+      message: "Gagal memproses pendaftaran. Silakan coba lagi.",
     };
   }
 }
@@ -154,5 +153,27 @@ export async function logoutUser(): Promise<{ success: boolean }> {
     return { success: true };
   } catch {
     return { success: false };
+  }
+}
+
+export async function getAccountProfile() {
+  return getCurrentUser();
+}
+
+export async function updateAccountName(name: string): Promise<AuthActionResult> {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, message: "Silakan masuk kembali ke akun Anda." };
+
+  const parsed = nameSchema.safeParse(name);
+  if (!parsed.success) {
+    return { success: false, message: parsed.error.issues[0]?.message || "Nama tidak valid." };
+  }
+
+  try {
+    await prisma.user.update({ where: { id: user.id }, data: { name: parsed.data } });
+    return { success: true, message: "Nama profil berhasil diperbarui." };
+  } catch (error) {
+    console.error("Error updateAccountName:", error);
+    return { success: false, message: "Gagal memperbarui profil. Silakan coba lagi." };
   }
 }

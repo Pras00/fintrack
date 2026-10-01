@@ -135,16 +135,16 @@ function resolveCategoryIcon(iconName?: string) {
 export default function BudgetsPage() {
   const { openBudgetModal } = useModalStore();
 
-  const [month, setMonth] = useState(9); // Default September
-  const [year, setYear] = useState(2026); // Default 2026
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
+  const [year, setYear] = useState(() => new Date().getFullYear());
   const [data, setData] = useState<BudgetsOverviewResponse>({
     budgets: [],
     totalLimit: 0,
     totalSpent: 0,
     remainingBudget: 0,
     overallPercent: 0,
-    activeMonth: 9,
-    activeYear: 2026,
+    activeMonth: month,
+    activeYear: year,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);

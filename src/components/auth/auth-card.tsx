@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
-  UserCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { loginUser, registerUser } from "@/actions/auth";
@@ -93,14 +92,6 @@ export function AuthCard({ initialTab = "login" }: AuthCardProps) {
         router.refresh();
       }
     });
-  };
-
-  const handleSelectDemo = (email: string, pass: string = "password123", name: string = "Demo") => {
-    setTab("login");
-    setLoginEmail(email);
-    setLoginPassword(pass);
-    setErrorMessage(null);
-    toast.info(`Akun demo ${name} dipilih.`);
   };
 
   return (
@@ -353,57 +344,6 @@ export function AuthCard({ initialTab = "login" }: AuthCardProps) {
             )}
           </button>
         </form>
-      )}
-
-      {/* QUICK DEMO SELECTOR - ONLY SHOWN ON LOGIN TAB */}
-      {tab === "login" && (
-        <div className="mt-4 pt-3 border-t border-border/50">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-            <div className="flex items-center gap-1 font-medium text-foreground/80 text-[11px]">
-              <UserCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-              <span>Akses Demo Cepat</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground">1-klik auto isi</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleSelectDemo("user@fintrack.id", "password123", "Prasz")}
-              className="flex items-center justify-between p-2.5 rounded-xl border border-border/70 hover:border-teal-500/50 bg-background/50 hover:bg-teal-500/5 transition-all cursor-pointer text-left group"
-            >
-              <div className="truncate pr-1">
-                <div className="text-xs font-bold text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400">
-                  Prasz
-                </div>
-                <div className="text-[10px] text-muted-foreground font-mono truncate">
-                  user@fintrack.id
-                </div>
-              </div>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 shrink-0">
-                UTAMA
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSelectDemo("demo@fintrack.id", "password123", "Akun Tamu")}
-              className="flex items-center justify-between p-2.5 rounded-xl border border-border/70 hover:border-teal-500/50 bg-background/50 hover:bg-teal-500/5 transition-all cursor-pointer text-left group"
-            >
-              <div className="truncate pr-1">
-                <div className="text-xs font-bold text-foreground group-hover:text-teal-600 dark:group-hover:text-teal-400">
-                  Akun Tamu
-                </div>
-                <div className="text-[10px] text-muted-foreground font-mono truncate">
-                  demo@fintrack.id
-                </div>
-              </div>
-              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
-                TAMU
-              </span>
-            </button>
-          </div>
-        </div>
       )}
 
       {/* Switch Tab Link */}

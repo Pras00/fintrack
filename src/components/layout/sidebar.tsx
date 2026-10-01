@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -11,13 +11,12 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  ShieldCheck,
   ChevronLeft,
   ChevronRight,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { logoutUser } from "@/actions/auth";
+import { getAccountProfile, logoutUser } from "@/actions/auth";
 import { Logo } from "@/components/brand/logo";
 import { useSidebarStore } from "@/stores/use-sidebar-store";
 
@@ -32,6 +31,7 @@ const NAV_ITEMS = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [profileName, setProfileName] = useState("Pengguna");
 
   const {
     isOpen,
@@ -48,6 +48,15 @@ export function Sidebar() {
     router.push("/login");
     router.refresh();
   };
+
+  useEffect(() => {
+    const loadProfile = () => {
+      getAccountProfile().then((profile) => setProfileName(profile?.name || "Pengguna"));
+    };
+    loadProfile();
+    window.addEventListener("fintrack:profile-updated", loadProfile);
+    return () => window.removeEventListener("fintrack:profile-updated", loadProfile);
+  }, []);
 
   // Close mobile drawer on route navigation
   useEffect(() => {
@@ -179,25 +188,14 @@ export function Sidebar() {
 
           {/* Mobile Footer */}
           <div className="p-3 border-t border-border/40">
-            {/* Security Assurance Card */}
-            <div className="rounded-xl border border-border/60 bg-muted/20 p-3 space-y-1">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
-                <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-                <span>Data Terproteksi</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Standar finansial tingkat eksekutif dengan enkripsi data aktif.
-              </p>
-            </div>
-
             {/* User profile capsule */}
             <div className="mt-3 flex items-center justify-between px-1">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="h-7 w-7 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-xs font-bold border border-emerald-500/30 shrink-0">
-                  P
+                  {profileName.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">Prasz</p>
+                  <p className="text-xs font-semibold text-foreground truncate">{profileName}</p>
                   <p className="text-[10px] text-muted-foreground truncate">Pengguna Terdaftar</p>
                 </div>
               </div>
@@ -333,25 +331,14 @@ export function Sidebar() {
 
           {/* Desktop Footer */}
           <div className="p-3 border-t border-border/40">
-            {/* Security Assurance Card */}
-            <div className="rounded-xl border border-border/60 bg-muted/20 p-3 space-y-1">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
-                <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-                <span>Data Terproteksi</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Standar finansial tingkat eksekutif dengan enkripsi data aktif.
-              </p>
-            </div>
-
             {/* User profile capsule */}
             <div className="mt-3 flex items-center justify-between px-1">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="h-7 w-7 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-xs font-bold border border-emerald-500/30 shrink-0">
-                  P
+                  {profileName.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">Prasz</p>
+                  <p className="text-xs font-semibold text-foreground truncate">{profileName}</p>
                   <p className="text-[10px] text-muted-foreground truncate">Pengguna Terdaftar</p>
                 </div>
               </div>

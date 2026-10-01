@@ -7,14 +7,14 @@ import { z } from "zod";
 import type { ActionResponse, TransactionItem } from "@/types";
 
 const transactionSchema = z.object({
-  amount: z.number().positive("Nominal harus lebih besar dari 0"),
+  amount: z.number().int("Nominal harus berupa rupiah bulat").positive("Nominal harus lebih besar dari 0").max(9999999999999),
   type: z.enum(["INCOME", "EXPENSE", "TRANSFER"]),
   walletId: z.string().min(1, "Dompet asal wajib dipilih"),
   toWalletId: z.string().optional(),
   categoryId: z.string().optional(),
   categoryName: z.string().optional(),
-  description: z.string().optional(),
-  date: z.string().optional(),
+  description: z.string().max(500).optional(),
+  date: z.iso.date().optional(),
 });
 
 export type CreateTransactionInput = z.infer<typeof transactionSchema>;
@@ -27,27 +27,13 @@ export async function createTransactionAction(
     const txDate = validated.date ? new Date(validated.date) : new Date();
 
     // 1. Tentukan pengguna yang aktif
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
-
-    if (!user) {
-      return { success: false, error: "Pengguna belum terdaftar di database" };
-    }
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: "Silakan masuk kembali ke akun Anda." };
 
     // 2. Validasi dompet sumber
-    let sourceWallet = await prisma.wallet.findFirst({
+    const sourceWallet = await prisma.wallet.findFirst({
       where: { id: validated.walletId, userId: user.id },
     });
-
-    // Jika walletId yang dikirim tidak ditemukan (misal ID legacy w-1), cari dompet pertama user
-    if (!sourceWallet) {
-      sourceWallet = await prisma.wallet.findFirst({
-        where: { userId: user.id },
-        orderBy: { createdAt: "asc" },
-      });
-    }
 
     if (!sourceWallet) {
       return { success: false, error: "Dompet sumber tidak ditemukan di akun Anda." };
@@ -56,48 +42,49 @@ export async function createTransactionAction(
     // 3. Validasi dompet tujuan jika TRANSFER
     let targetWalletId: string | null = null;
     if (validated.type === "TRANSFER") {
-      let targetWallet = validated.toWalletId
-        ? await prisma.wallet.findFirst({
-            where: { id: validated.toWalletId, userId: user.id },
-          })
-        : null;
-
-      // Jika tidak ditemukan atau sama dengan dompet asal, cari dompet lain milik user
-      if (!targetWallet || targetWallet.id === sourceWallet.id) {
-        targetWallet = await prisma.wallet.findFirst({
-          where: {
-            userId: user.id,
-            id: { not: sourceWallet.id },
-          },
-        });
+      if (!validated.toWalletId || validated.toWalletId === sourceWallet.id) {
+        return { success: false, error: "Pilih dompet tujuan yang berbeda dari dompet asal." };
       }
-
-      if (targetWallet) {
-        targetWalletId = targetWallet.id;
+      const targetWallet = await prisma.wallet.findFirst({
+        where: { id: validated.toWalletId, userId: user.id },
+      });
+      if (!targetWallet) return { success: false, error: "Dompet tujuan tidak ditemukan di akun Anda." };
+      if (targetWallet.currency !== sourceWallet.currency) {
+        return { success: false, error: "Transfer antar mata uang belum didukung." };
       }
+      targetWalletId = targetWallet.id;
     }
 
     // 4. Resolve Kategori
     let finalCategoryId: string | null = null;
-    if (validated.categoryId) {
-      const cat = await prisma.category.findUnique({
-        where: { id: validated.categoryId },
-      });
-      if (cat) finalCategoryId = cat.id;
-    }
-
-    if (!finalCategoryId && validated.categoryName) {
+    if (validated.type !== "TRANSFER" && (validated.categoryId || validated.categoryName)) {
       const cat = await prisma.category.findFirst({
         where: {
-          name: validated.categoryName,
+          ...(validated.categoryId
+            ? { id: validated.categoryId }
+            : { name: validated.categoryName }),
+          type: validated.type,
           OR: [{ userId: null }, { userId: user.id }],
         },
       });
-      if (cat) finalCategoryId = cat.id;
+      if (!cat) return { success: false, error: "Kategori tidak valid untuk akun atau jenis transaksi ini." };
+      finalCategoryId = cat.id;
     }
 
     // 5. Eksekusi transaksi atomik di database
     const createdTx = await prisma.$transaction(async (tx) => {
+      if (validated.type !== "INCOME") {
+        const debit = await tx.wallet.updateMany({
+          where: {
+            id: sourceWallet.id,
+            userId: user.id,
+            balance: { gte: validated.amount },
+          },
+          data: { balance: { decrement: validated.amount } },
+        });
+        if (debit.count !== 1) throw new Error("Saldo dompet asal tidak mencukupi.");
+      }
+
       const newRecord = await tx.transaction.create({
         data: {
           amount: validated.amount,
@@ -112,21 +99,12 @@ export async function createTransactionAction(
       });
 
       // Mutasi saldo atomik
-      if (validated.type === "EXPENSE") {
-        await tx.wallet.update({
-          where: { id: sourceWallet.id },
-          data: { balance: { decrement: validated.amount } },
-        });
-      } else if (validated.type === "INCOME") {
+      if (validated.type === "INCOME") {
         await tx.wallet.update({
           where: { id: sourceWallet.id },
           data: { balance: { increment: validated.amount } },
         });
       } else if (validated.type === "TRANSFER" && targetWalletId) {
-        await tx.wallet.update({
-          where: { id: sourceWallet.id },
-          data: { balance: { decrement: validated.amount } },
-        });
         await tx.wallet.update({
           where: { id: targetWalletId },
           data: { balance: { increment: validated.amount } },
@@ -148,19 +126,20 @@ export async function createTransactionAction(
 
     return { success: true, data: { id: createdTx.id } };
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Gagal menyimpan transaksi";
-    console.error("Error createTransactionAction:", errorMessage);
-    return { success: false, error: errorMessage };
+    console.error("Error createTransactionAction:", error);
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.issues[0]?.message || "Data transaksi tidak valid." };
+    }
+    if (error instanceof Error && error.message === "Saldo dompet asal tidak mencukupi.") {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Gagal menyimpan transaksi. Silakan coba lagi." };
   }
 }
 
 export async function getTransactionFormDataAction() {
   try {
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     if (!user) return { wallets: [], categories: [] };
 
@@ -194,10 +173,7 @@ export async function getTransactionFormDataAction() {
 
 export async function getTransactionsAction(): Promise<TransactionItem[]> {
   try {
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     if (!user) return [];
 

@@ -20,10 +20,10 @@ interface KPICardsProps {
 }
 
 export function KPICards({
-  initialNetWorth = 84480000,
-  initialIncomeMonth = 33500000,
-  initialExpenseMonth = 3590000,
-  initialActiveWallets = 4,
+  initialNetWorth = 0,
+  initialIncomeMonth = 0,
+  initialExpenseMonth = 0,
+  initialActiveWallets = 0,
 }: KPICardsProps) {
   const [netWorth, setNetWorth] = useState(initialNetWorth);
   const [incomeMonth, setIncomeMonth] = useState(initialIncomeMonth);
@@ -71,7 +71,7 @@ export function KPICards({
 
   const netSavings = incomeMonth - expenseMonth;
   const savingsRate = incomeMonth > 0 ? ((netSavings / incomeMonth) * 100).toFixed(1) : "0";
-  const dailyAverageExpense = Math.round(expenseMonth / 28);
+  const dailyAverageExpense = Math.round(expenseMonth / new Date().getDate());
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -96,7 +96,7 @@ export function KPICards({
           <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-semibold text-emerald-600 dark:text-emerald-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Tersinkron Real-Time
+              Saldo Tercatat
             </span>
             <span className="font-medium">{activeWallets} Akun Aktif</span>
           </div>

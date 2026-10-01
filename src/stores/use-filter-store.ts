@@ -33,7 +33,7 @@ export function formatDateLabel(
   if (preset === "last_month") return "Bulan Lalu";
   if (preset === "7d") return "7 Hari Terakhir";
   if (preset === "30d") return "30 Hari Terakhir";
-  if (preset === "this_year") return "Tahun 2026";
+  if (preset === "this_year") return `Tahun ${start?.slice(0, 4) || new Date().getFullYear()}`;
   if (preset === "today") return "Hari Ini";
   if (preset === "yesterday") return "Kemarin";
 

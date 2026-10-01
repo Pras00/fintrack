@@ -6,54 +6,36 @@ import { formatRupiah } from "@/lib/utils";
 import { CreditCard, ArrowRightLeft, AlertTriangle, Loader2 } from "lucide-react";
 import { useModalStore } from "@/stores/use-modal-store";
 import { getTransactionFormDataAction } from "@/actions/transactions";
+import { getBudgetsAction } from "@/actions/budgets";
+import type { BudgetItem } from "@/types";
 
 interface WalletItem {
   id: string;
   name: string;
   type: string;
   balance: number;
-  accountNumber: string;
 }
-
-const BUDGET_ITEMS = [
-  { name: "Makanan & Minuman", spent: 3450000, limit: 4000000, percent: 86 },
-  { name: "Tagihan & Utilitas", spent: 2100000, limit: 2500000, percent: 84 },
-  { name: "Belanja & Lifestyle", spent: 1350000, limit: 2000000, percent: 67 },
-];
 
 export function WalletSnapshot() {
   const { openTransactionModal } = useModalStore();
   const [wallets, setWallets] = useState<WalletItem[]>([]);
+  const [budgets, setBudgets] = useState<BudgetItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadWallets = async () => {
     try {
-      const data = await getTransactionFormDataAction();
+      const [data, budgetData] = await Promise.all([
+        getTransactionFormDataAction(),
+        getBudgetsAction(),
+      ]);
+      setBudgets(budgetData.budgets.filter((budget) => budget.percent >= 80));
       setWallets(
-        data.wallets.map((w) => {
-          let typeDesc = "Rekening Tabungan";
-          let accNo = "•••• " + w.id.slice(-4).toUpperCase();
-          if (w.name.includes("BCA")) {
-            typeDesc = "Rekening Utama";
-            accNo = "•••• 8921";
-          } else if (w.name.includes("Mandiri")) {
-            typeDesc = "Gaji & Operasional";
-            accNo = "•••• 3144";
-          } else if (w.name.includes("GoPay") || w.type === "EWALLET") {
-            typeDesc = "E-Wallet Harian";
-            accNo = "•••• 0812";
-          } else if (w.name.includes("Tunai") || w.type === "CASH") {
-            typeDesc = "Dompet Tunai";
-            accNo = "Cash Pocket";
-          }
-          return {
-            id: w.id,
-            name: w.name,
-            type: typeDesc,
-            balance: w.balance,
-            accountNumber: accNo,
-          };
-        })
+        data.wallets.map((w) => ({
+          id: w.id,
+          name: w.name,
+          type: w.type === "CASH" ? "Tunai" : w.type === "EWALLET" ? "Dompet digital" : w.type === "BANK" ? "Rekening" : "Dompet",
+          balance: w.balance,
+        }))
       );
     } catch (e) {
       console.error("Gagal mengambil data dompet:", e);
@@ -63,15 +45,17 @@ export function WalletSnapshot() {
   };
 
   useEffect(() => {
-    loadWallets();
+    queueMicrotask(loadWallets);
 
     const handleCreated = () => {
       loadWallets();
     };
 
     window.addEventListener("fintrack:transaction-created", handleCreated);
+    window.addEventListener("fintrack:budget-updated", handleCreated);
     return () => {
       window.removeEventListener("fintrack:transaction-created", handleCreated);
+      window.removeEventListener("fintrack:budget-updated", handleCreated);
     };
   }, []);
 
@@ -112,7 +96,6 @@ export function WalletSnapshot() {
               >
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                   <span className="font-medium text-foreground truncate">{w.name}</span>
-                  <span className="text-[10px] tabular-nums font-mono">{w.accountNumber}</span>
                 </div>
                 <div className="mt-2">
                   <span className="text-xs font-bold text-foreground tabular-nums block group-hover:text-primary transition-colors">
@@ -136,7 +119,10 @@ export function WalletSnapshot() {
           </div>
 
           <div className="space-y-2.5">
-            {BUDGET_ITEMS.map((b) => (
+            {budgets.length === 0 && (
+              <p className="text-xs text-muted-foreground">Tidak ada anggaran yang mencapai 80% bulan ini.</p>
+            )}
+            {budgets.map((b) => (
               <div key={b.name} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground truncate">{b.name}</span>

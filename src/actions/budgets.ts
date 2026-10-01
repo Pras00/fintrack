@@ -25,17 +25,17 @@ export interface BudgetCategoryOption {
 
 const budgetSchema = z.object({
   categoryId: z.string().min(1, "Kategori wajib dipilih"),
-  customCategoryName: z.string().optional(),
+  customCategoryName: z.string().max(100).optional(),
   customCategoryIcon: z.string().optional(),
   customCategoryColor: z.string().optional(),
-  amountLimit: z.number().positive("Nominal limit harus lebih besar dari 0"),
-  month: z.number().min(1).max(12),
-  year: z.number().min(2020).max(2035),
+  amountLimit: z.number().int().positive("Nominal limit harus lebih besar dari 0").max(9999999999999),
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2020).max(2035),
 });
 
 const updateBudgetSchema = z.object({
   id: z.string().min(1, "ID anggaran wajib ada"),
-  amountLimit: z.number().positive("Nominal limit harus lebih besar dari 0"),
+  amountLimit: z.number().int().positive("Nominal limit harus lebih besar dari 0").max(9999999999999),
 });
 
 export async function getBudgetsAction(
@@ -43,13 +43,10 @@ export async function getBudgetsAction(
   year?: number
 ): Promise<BudgetsOverviewResponse> {
   try {
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
-
-    const m = month && month >= 1 && month <= 12 ? month : 9; // Default September
-    const y = year && year >= 2020 && year <= 2035 ? year : 2026; // Default 2026
+    const user = await getCurrentUser();
+    const now = new Date();
+    const m = month && Number.isInteger(month) && month >= 1 && month <= 12 ? month : now.getMonth() + 1;
+    const y = year && Number.isInteger(year) && year >= 2020 && year <= 2035 ? year : now.getFullYear();
 
     if (!user) {
       return {
@@ -147,18 +144,15 @@ export async function getBudgetsAction(
       totalSpent: 0,
       remainingBudget: 0,
       overallPercent: 0,
-      activeMonth: month || 9,
-      activeYear: year || 2026,
+        activeMonth: month || new Date().getMonth() + 1,
+        activeYear: year || new Date().getFullYear(),
     };
   }
 }
 
 export async function getBudgetCategoriesAction(): Promise<BudgetCategoryOption[]> {
   try {
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     if (!user) return [];
 
@@ -198,16 +192,24 @@ export async function createBudgetAction(
   try {
     const validated = budgetSchema.parse(data);
 
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     if (!user) {
       return { success: false, error: "Pengguna belum terautentikasi" };
     }
 
-    let targetCategoryId = validated.categoryId;
+    const selectedCategory = await prisma.category.findFirst({
+      where: {
+        id: validated.categoryId,
+        type: "EXPENSE",
+        OR: [{ userId: null }, { userId: user.id }],
+      },
+    });
+    if (!selectedCategory) {
+      return { success: false, error: "Kategori pengeluaran tidak valid untuk akun Anda." };
+    }
+
+    let targetCategoryId = selectedCategory.id;
 
     // Jika user menginputkan nama kategori kustom (dari opsi "Pengeluaran Lainnya")
     if (validated.customCategoryName && validated.customCategoryName.trim()) {
@@ -218,6 +220,7 @@ export async function createBudgetAction(
         where: {
           userId: user.id,
           name: { equals: trimmedName, mode: "insensitive" },
+          type: "EXPENSE",
         },
       });
 
@@ -273,10 +276,11 @@ export async function createBudgetAction(
 
     return { success: true, data: { id: budget.id } };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Gagal menyimpan batas anggaran";
-    console.error("Error createBudgetAction:", errorMessage);
-    return { success: false, error: errorMessage };
+    console.error("Error createBudgetAction:", error);
+    return {
+      success: false,
+      error: error instanceof z.ZodError ? error.issues[0]?.message : "Gagal menyimpan batas anggaran.",
+    };
   }
 }
 
@@ -286,10 +290,7 @@ export async function updateBudgetAction(
   try {
     const validated = updateBudgetSchema.parse(data);
 
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     if (!user) {
       return { success: false, error: "Pengguna belum terautentikasi" };
@@ -318,10 +319,11 @@ export async function updateBudgetAction(
 
     return { success: true, data: { id: updated.id } };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Gagal memperbarui batas anggaran";
-    console.error("Error updateBudgetAction:", errorMessage);
-    return { success: false, error: errorMessage };
+    console.error("Error updateBudgetAction:", error);
+    return {
+      success: false,
+      error: error instanceof z.ZodError ? error.issues[0]?.message : "Gagal memperbarui batas anggaran.",
+    };
   }
 }
 
@@ -329,10 +331,7 @@ export async function deleteBudgetAction(
   id: string
 ): Promise<ActionResponse> {
   try {
-    const currentUser = await getCurrentUser();
-    const user = currentUser
-      ? await prisma.user.findUnique({ where: { id: currentUser.id } })
-      : await prisma.user.findFirst();
+    const user = await getCurrentUser();
 
     if (!user) {
       return { success: false, error: "Pengguna belum terautentikasi" };
@@ -358,9 +357,7 @@ export async function deleteBudgetAction(
 
     return { success: true };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Gagal menghapus anggaran";
-    console.error("Error deleteBudgetAction:", errorMessage);
-    return { success: false, error: errorMessage };
+    console.error("Error deleteBudgetAction:", error);
+    return { success: false, error: "Gagal menghapus anggaran." };
   }
 }
