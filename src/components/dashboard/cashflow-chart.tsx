@@ -96,17 +96,17 @@ function formatChartAxis(val: number, isCompactMobile: boolean): string {
   if (abs >= 1_000_000_000) {
     const num = val / 1_000_000_000;
     const formatted = num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
-    return isCompactMobile ? `${formatted}M` : `Rp\u00A0${formatted}\u00A0M`;
+    return isCompactMobile ? `${formatted}M` : `Rp\u00A0${formatted}M`;
   }
   if (abs >= 1_000_000) {
     const num = val / 1_000_000;
     const formatted = num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
-    return isCompactMobile ? `${formatted}jt` : `Rp\u00A0${formatted}\u00A0jt`;
+    return isCompactMobile ? `${formatted}jt` : `Rp\u00A0${formatted}jt`;
   }
   if (abs >= 1_000) {
     const num = val / 1_000;
     const formatted = num % 1 === 0 ? num.toFixed(0) : num.toFixed(0);
-    return isCompactMobile ? `${formatted}rb` : `Rp\u00A0${formatted}\u00A0rb`;
+    return isCompactMobile ? `${formatted}rb` : `Rp\u00A0${formatted}rb`;
   }
   return isCompactMobile ? `${val}` : `Rp\u00A0${val}`;
 }
@@ -180,7 +180,7 @@ export function CashflowChart() {
   const chartMargin = {
     top: 10,
     right: isMobile ? 8 : 16,
-    left: isMobile ? -6 : 0,
+    left: isMobile ? 4 : 12,
     bottom: 4,
   };
 
@@ -323,9 +323,10 @@ export function CashflowChart() {
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={8}
+                  tickMargin={6}
                   interval={getXAxisInterval(data.length, isMobile)}
-                  className="text-[10px] sm:text-xs font-medium fill-muted-foreground"
+                  tick={{ fontSize: isMobile ? 9 : 11 }}
+                  className="text-[9px] sm:text-[11px] font-medium fill-muted-foreground/80"
                 />
 
                 <YAxis
@@ -334,7 +335,8 @@ export function CashflowChart() {
                   tickMargin={6}
                   width={yAxisWidth}
                   tickFormatter={(val) => formatChartAxis(val, isMobile)}
-                  className="text-[10px] sm:text-xs font-medium fill-muted-foreground"
+                  tick={{ fontSize: isMobile ? 9 : 11 }}
+                  className="text-[9px] sm:text-[11px] font-medium fill-muted-foreground/80"
                 />
 
                 <Tooltip content={<CustomTooltip />} />
