@@ -53,12 +53,12 @@ export function DateRangePicker() {
       const [y, m] = startDate.split("-").map(Number);
       return new Date(y, m - 1, 1);
     }
-    return new Date(2026, 8, 1); // Default September 2026
+    return new Date();
   });
 
   // Sync state whenever popover opens
-  useEffect(() => {
-    if (isOpen) {
+  const handleToggleOpen = () => {
+    if (!isOpen) {
       setSelectedRange({ start: startDate, end: endDate });
       setTempPreset(datePreset);
       if (startDate) {
@@ -66,7 +66,8 @@ export function DateRangePicker() {
         setViewDate(new Date(y, m - 1, 1));
       }
     }
-  }, [isOpen, startDate, endDate, datePreset]);
+    setIsOpen((prev) => !prev);
+  };
 
   // Click outside and Escape key handler
   useEffect(() => {
@@ -228,7 +229,7 @@ export function DateRangePicker() {
         const mIdx = parseInt(m, 10) - 1;
         return `Tanggal Tunggal: ${parseInt(d, 10)} ${ID_MONTHS_SHORT[mIdx]} ${y}`;
       }
-      const [y1, m1, d1] = start.split("-");
+      const [, m1, d1] = start.split("-");
       const [y2, m2, d2] = end.split("-");
       const mIdx1 = parseInt(m1, 10) - 1;
       const mIdx2 = parseInt(m2, 10) - 1;
@@ -242,23 +243,38 @@ export function DateRangePicker() {
     return "Pilih tanggal atau rentang waktu";
   }, [tempPreset, selectedRange]);
 
-  const PRESET_OPTIONS: Array<{ key: DatePreset; label: string }> = [
-    { key: "today", label: "Hari Ini" },
-    { key: "yesterday", label: "Kemarin" },
-    { key: "7d", label: "7 Hari Terakhir" },
-    { key: "30d", label: "30 Hari Terakhir" },
-    { key: "this_month", label: "Bulan Ini (Sep 2026)" },
-    { key: "last_month", label: "Bulan Lalu (Agu 2026)" },
-    { key: "this_year", label: "Tahun 2026" },
-    { key: "all", label: "Semua Waktu" },
-  ];
+  const presetOptions = useMemo(() => {
+    const now = new Date();
+    const currM = now.getMonth();
+    const currY = now.getFullYear();
+    const prevDate = new Date(currY, currM - 1, 1);
+    const prevM = prevDate.getMonth();
+    const prevY = prevDate.getFullYear();
+
+    return [
+      { key: "today" as DatePreset, label: "Hari Ini" },
+      { key: "yesterday" as DatePreset, label: "Kemarin" },
+      { key: "7d" as DatePreset, label: "7 Hari Terakhir" },
+      { key: "30d" as DatePreset, label: "30 Hari Terakhir" },
+      {
+        key: "this_month" as DatePreset,
+        label: `Bulan Ini (${ID_MONTHS_SHORT[currM]} ${currY})`,
+      },
+      {
+        key: "last_month" as DatePreset,
+        label: `Bulan Lalu (${ID_MONTHS_SHORT[prevM]} ${prevY})`,
+      },
+      { key: "this_year" as DatePreset, label: `Tahun ${currY}` },
+      { key: "all" as DatePreset, label: "Semua Waktu" },
+    ];
+  }, []);
 
   return (
     <div className="relative" ref={containerRef}>
       {/* TRIGGER BUTTON */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggleOpen}
         className={cn(
           "flex h-10 items-center gap-2 rounded-xl border border-border/80 bg-background/80 hover:bg-muted/50 px-3.5 text-xs font-semibold text-foreground/90 shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-teal-500",
           isOpen && "border-teal-500 ring-1 ring-teal-500 bg-muted/40"
@@ -286,7 +302,7 @@ export function DateRangePicker() {
                 Pilihan Cepat
               </span>
               <div className="space-y-1">
-                {PRESET_OPTIONS.map((item) => {
+                {presetOptions.map((item) => {
                   const isSelected = tempPreset === item.key;
                   return (
                     <button

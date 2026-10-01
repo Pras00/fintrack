@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { formatCompactRupiah, formatRupiah } from "@/lib/utils";
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { getCashflowChartAction, CashflowPoint } from "@/actions/dashboard";
+import { useFilterStore } from "@/stores/use-filter-store";
 
 function useIsMounted() {
   return useSyncExternalStore(
@@ -74,7 +75,11 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
           </div>
           <div className="flex items-center justify-between gap-4 pt-1.5 border-t border-border/50">
             <span className="text-muted-foreground font-medium">Arus Bersih:</span>
-            <span className={`tabular-nums font-bold ${net >= 0 ? "text-teal-600 dark:text-teal-400" : "text-rose-600 dark:text-rose-400"}`}>
+            <span
+              className={`tabular-nums font-bold ${
+                net >= 0 ? "text-teal-600 dark:text-teal-400" : "text-rose-600 dark:text-rose-400"
+              }`}
+            >
               {net >= 0 ? `+${formatRupiah(net)}` : formatRupiah(net)}
             </span>
           </div>
@@ -86,29 +91,39 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 function formatChartAxis(val: number, isCompactMobile: boolean): string {
-  if (val === 0) return "Rp 0";
-  if (Math.abs(val) >= 1_000_000_000) {
+  if (val === 0) return isCompactMobile ? "0" : "Rp\u00A00";
+  const abs = Math.abs(val);
+  if (abs >= 1_000_000_000) {
     const num = val / 1_000_000_000;
     const formatted = num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
-    return isCompactMobile ? `${formatted}M` : `Rp ${formatted}M`;
+    return isCompactMobile ? `${formatted}M` : `Rp\u00A0${formatted}\u00A0M`;
   }
-  if (Math.abs(val) >= 1_000_000) {
+  if (abs >= 1_000_000) {
     const num = val / 1_000_000;
     const formatted = num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
-    return isCompactMobile ? `${formatted}jt` : `Rp ${formatted}jt`;
+    return isCompactMobile ? `${formatted}jt` : `Rp\u00A0${formatted}\u00A0jt`;
   }
-  if (Math.abs(val) >= 1_000) {
+  if (abs >= 1_000) {
     const num = val / 1_000;
     const formatted = num % 1 === 0 ? num.toFixed(0) : num.toFixed(0);
-    return isCompactMobile ? `${formatted}rb` : `Rp ${formatted}rb`;
+    return isCompactMobile ? `${formatted}rb` : `Rp\u00A0${formatted}\u00A0rb`;
   }
-  return isCompactMobile ? `${val}` : `Rp ${val}`;
+  return isCompactMobile ? `${val}` : `Rp\u00A0${val}`;
+}
+
+function getXAxisInterval(len: number, isMobileScreen: boolean): number {
+  if (len <= 7) return 0;
+  if (len <= 14) return isMobileScreen ? 2 : 1;
+  if (len <= 31) return isMobileScreen ? 5 : 3;
+  return isMobileScreen ? Math.floor(len / 5) : Math.floor(len / 8);
 }
 
 export function CashflowChart() {
   const isMounted = useIsMounted();
   const isMobile = useIsMobile();
-  const [range, setRange] = useState<"7d" | "30d">("30d");
+  const { startDate, endDate, dateLabel } = useFilterStore();
+  const [prevDates, setPrevDates] = useState({ startDate, endDate });
+  const [rangeMode, setRangeMode] = useState<"filter" | "7d" | "30d">("filter");
 
   const [data, setData] = useState<CashflowPoint[]>([]);
   const [totalIncome, setTotalIncome] = useState(0);
@@ -116,12 +131,18 @@ export function CashflowChart() {
   const [netSavingsRate, setNetSavingsRate] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Whenever global navbar dates change, auto-sync back to active filter
+  if (prevDates.startDate !== startDate || prevDates.endDate !== endDate) {
+    setPrevDates({ startDate, endDate });
+    setRangeMode("filter");
+  }
+
   useEffect(() => {
     let ignore = false;
 
     async function loadData() {
       try {
-        const res = await getCashflowChartAction(range);
+        const res = await getCashflowChartAction(rangeMode, startDate, endDate);
         if (!ignore) {
           setData(res.points);
           setTotalIncome(res.totalIncome);
@@ -153,15 +174,22 @@ export function CashflowChart() {
       window.removeEventListener("fintrack:transaction-updated", handleTransactionChange);
       window.removeEventListener("fintrack:transaction-deleted", handleTransactionChange);
     };
-  }, [range]);
+  }, [rangeMode, startDate, endDate]);
 
-  const yAxisWidth = isMobile ? 48 : 64;
+  const yAxisWidth = isMobile ? 54 : 76;
   const chartMargin = {
     top: 10,
     right: isMobile ? 8 : 16,
-    left: isMobile ? 0 : 4,
+    left: isMobile ? -6 : 0,
     bottom: 4,
   };
+
+  const rangeDisplayLabel =
+    rangeMode === "filter"
+      ? dateLabel
+      : rangeMode === "7d"
+      ? "7 Hari"
+      : "30 Hari";
 
   return (
     <Card className="col-span-1 lg:col-span-8 overflow-hidden">
@@ -179,12 +207,27 @@ export function CashflowChart() {
         {/* Inline Segmented Control */}
         <div className="flex items-center self-start sm:self-auto rounded-lg border border-border/60 bg-muted/40 p-0.5 text-xs shrink-0">
           <button
+            type="button"
             onClick={() => {
               setIsLoading(true);
-              setRange("7d");
+              setRangeMode("filter");
             }}
             className={`rounded-md px-2.5 py-1 font-medium transition-all cursor-pointer ${
-              range === "7d"
+              rangeMode === "filter"
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Periode Filter
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsLoading(true);
+              setRangeMode("7d");
+            }}
+            className={`rounded-md px-2.5 py-1 font-medium transition-all cursor-pointer ${
+              rangeMode === "7d"
                 ? "bg-background text-foreground shadow-xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
@@ -192,12 +235,13 @@ export function CashflowChart() {
             7 Hari
           </button>
           <button
+            type="button"
             onClick={() => {
               setIsLoading(true);
-              setRange("30d");
+              setRangeMode("30d");
             }}
             className={`rounded-md px-2.5 py-1 font-medium transition-all cursor-pointer ${
-              range === "30d"
+              rangeMode === "30d"
                 ? "bg-background text-foreground shadow-xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
@@ -210,9 +254,12 @@ export function CashflowChart() {
       <CardContent>
         {/* Secondary Context Metric Strip */}
         <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 rounded-xl border border-border/50 bg-muted/20 p-3 text-xs">
-          <div>
-            <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
-              Total Masuk ({range.toUpperCase()})
+          <div className="min-w-0">
+            <span
+              className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium truncate"
+              title={`Total Masuk (${rangeDisplayLabel})`}
+            >
+              Total Masuk ({rangeDisplayLabel})
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
               <ArrowUpRight className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
@@ -222,9 +269,12 @@ export function CashflowChart() {
             </div>
           </div>
 
-          <div>
-            <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
-              Total Keluar ({range.toUpperCase()})
+          <div className="min-w-0">
+            <span
+              className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium truncate"
+              title={`Total Keluar (${rangeDisplayLabel})`}
+            >
+              Total Keluar ({rangeDisplayLabel})
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
               <ArrowDownRight className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
@@ -234,7 +284,7 @@ export function CashflowChart() {
             </div>
           </div>
 
-          <div className="col-span-2 sm:col-span-1 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-border/40">
+          <div className="col-span-2 sm:col-span-1 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-border/40 min-w-0">
             <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
               Rasio Tabungan Bersih
             </span>
@@ -274,17 +324,17 @@ export function CashflowChart() {
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  interval={range === "7d" ? 0 : isMobile ? 5 : 3}
-                  className="text-[10px] sm:text-xs fill-muted-foreground"
+                  interval={getXAxisInterval(data.length, isMobile)}
+                  className="text-[10px] sm:text-xs font-medium fill-muted-foreground"
                 />
 
                 <YAxis
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={4}
+                  tickMargin={6}
                   width={yAxisWidth}
                   tickFormatter={(val) => formatChartAxis(val, isMobile)}
-                  className="text-[10px] sm:text-xs fill-muted-foreground"
+                  className="text-[10px] sm:text-xs font-medium fill-muted-foreground"
                 />
 
                 <Tooltip content={<CustomTooltip />} />
@@ -313,7 +363,7 @@ export function CashflowChart() {
           ) : (
             <div className="h-[250px] w-full flex items-center justify-center text-xs text-muted-foreground gap-2">
               <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
-              <span>Memuat data transaksi NeonDB...</span>
+              <span>Menyiapkan visualisasi arus kas...</span>
             </div>
           )}
         </div>

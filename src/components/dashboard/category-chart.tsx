@@ -84,7 +84,7 @@ export function CategoryChart() {
           {isLoading ? (
             <div className="h-[190px] w-full flex items-center justify-center text-xs text-muted-foreground gap-2">
               <Loader2 className="h-4 w-4 animate-spin text-rose-500" />
-              <span>Memuat kategori...</span>
+              <span>Menganalisis distribusi pengeluaran...</span>
             </div>
           ) : categories.length === 0 ? (
             <div className="h-[190px] w-full flex flex-col items-center justify-center text-center p-4 text-muted-foreground">

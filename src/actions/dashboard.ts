@@ -100,7 +100,9 @@ export async function getDashboardData() {
 }
 
 export async function getCashflowChartAction(
-  range: "7d" | "30d" = "30d"
+  range: "7d" | "30d" | "filter" = "filter",
+  startDateStr?: string | null,
+  endDateStr?: string | null
 ): Promise<CashflowChartResponse> {
   try {
     const currentUser = await getCurrentUser();
@@ -117,23 +119,66 @@ export async function getCashflowChartAction(
 
     if (!user) return emptyResult;
 
-    const numDays = range === "7d" ? 7 : 30;
+    let startDate: Date;
+    let endDate: Date;
     const now = new Date();
-    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (numDays - 1), 0, 0, 0, 0);
 
-    // Build timeline daily slots
     const dayMap = new Map<string, CashflowPoint>();
-    for (let i = numDays - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-      const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const label = `${String(d.getDate()).padStart(2, "0")} ${SHORT_MONTHS[d.getMonth()]}`;
-      dayMap.set(ymd, {
-        date: label,
-        fullDate: ymd,
-        income: 0,
-        expense: 0,
-      });
+
+    if (range === "filter" && startDateStr && endDateStr) {
+      const [sy, sm, sd] = startDateStr.split("-").map(Number);
+      const [ey, em, ed] = endDateStr.split("-").map(Number);
+      startDate = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
+      endDate = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+
+      const sMid = new Date(sy, sm - 1, sd);
+      const eMid = new Date(ey, em - 1, ed);
+      const diffDays = Math.max(1, Math.round((eMid.getTime() - sMid.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+      if (diffDays <= 62) {
+        // Daily slots for single month or up to 2 months
+        for (let i = 0; i < diffDays; i++) {
+          const d = new Date(sy, sm - 1, sd + i);
+          const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          const label = `${String(d.getDate()).padStart(2, "0")} ${SHORT_MONTHS[d.getMonth()]}`;
+          dayMap.set(ymd, {
+            date: label,
+            fullDate: ymd,
+            income: 0,
+            expense: 0,
+          });
+        }
+      } else {
+        // Monthly slots for larger ranges (e.g. this_year)
+        const curr = new Date(sy, sm - 1, 1);
+        while (curr <= endDate) {
+          const ym = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, "0")}`;
+          const label = `${SHORT_MONTHS[curr.getMonth()]} ${String(curr.getFullYear()).slice(-2)}`;
+          dayMap.set(ym, {
+            date: label,
+            fullDate: ym,
+            income: 0,
+            expense: 0,
+          });
+          curr.setMonth(curr.getMonth() + 1);
+        }
+      }
+    } else {
+      const numDays = range === "7d" ? 7 : 30;
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (numDays - 1), 0, 0, 0, 0);
+
+      for (let i = numDays - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const label = `${String(d.getDate()).padStart(2, "0")} ${SHORT_MONTHS[d.getMonth()]}`;
+        dayMap.set(ymd, {
+          date: label,
+          fullDate: ymd,
+          income: 0,
+          expense: 0,
+        });
+      }
     }
 
     // Query real transactions from NeonDB
@@ -154,10 +199,15 @@ export async function getCashflowChartAction(
       orderBy: { date: "asc" },
     });
 
+    const isMonthlyGrouping = dayMap.size > 0 && Array.from(dayMap.keys())[0].length === 7;
+
     for (const tx of transactions) {
       const d = new Date(tx.date);
-      const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const point = dayMap.get(ymd);
+      const key = isMonthlyGrouping
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+        : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+      const point = dayMap.get(key);
       if (point) {
         const amt = parseFloat(tx.amount.toString());
         if (tx.type === "INCOME") {
