@@ -4,8 +4,11 @@ import { CashflowChart } from "@/components/dashboard/cashflow-chart";
 import { CategoryChart } from "@/components/dashboard/category-chart";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { WalletSnapshot } from "@/components/dashboard/wallet-snapshot";
+import { getDashboardData } from "@/actions/dashboard";
 
-export default function Home() {
+export default async function Home() {
+  const dashboardData = await getDashboardData();
+
   return (
     <DashboardShell>
       {/* Welcome Banner & Context Bar */}
@@ -15,7 +18,7 @@ export default function Home() {
             Ringkasan Finansial Anda
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Pantau arus kas, alokasi anggaran, dan saldo per 27 September 2026
+            Pantau arus kas riil, alokasi anggaran, dan saldo akun keuangan Anda
           </p>
         </div>
 
@@ -26,7 +29,12 @@ export default function Home() {
       </div>
 
       {/* KPI Metric Cards Grid */}
-      <KPICards />
+      <KPICards
+        initialNetWorth={dashboardData?.netWorth}
+        initialIncomeMonth={dashboardData?.incomeMonth}
+        initialExpenseMonth={dashboardData?.expenseMonth}
+        initialActiveWallets={dashboardData?.activeWalletsCount}
+      />
 
       {/* Interactive Visual Charts Grid (Area & Donut) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

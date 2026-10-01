@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { NumberCounter } from "@/components/ui/number-counter";
 import { getDashboardData } from "@/actions/dashboard";
@@ -8,7 +8,6 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
-  TrendingUp,
   Receipt,
   PiggyBank,
 } from "lucide-react";
@@ -17,44 +16,58 @@ interface KPICardsProps {
   initialNetWorth?: number;
   initialIncomeMonth?: number;
   initialExpenseMonth?: number;
+  initialActiveWallets?: number;
 }
 
 export function KPICards({
-  initialNetWorth = 84500000,
+  initialNetWorth = 84480000,
   initialIncomeMonth = 33500000,
   initialExpenseMonth = 3590000,
+  initialActiveWallets = 4,
 }: KPICardsProps) {
   const [netWorth, setNetWorth] = useState(initialNetWorth);
   const [incomeMonth, setIncomeMonth] = useState(initialIncomeMonth);
   const [expenseMonth, setExpenseMonth] = useState(initialExpenseMonth);
-  const [activeWallets, setActiveWallets] = useState(4);
-
-  const loadMetrics = useCallback(async () => {
-    try {
-      const data = await getDashboardData();
-      if (data) {
-        setNetWorth(data.netWorth);
-        setIncomeMonth(data.incomeMonth);
-        setExpenseMonth(data.expenseMonth);
-        setActiveWallets(data.activeWalletsCount);
-      }
-    } catch (err) {
-      console.error("Gagal memuat KPI finansial:", err);
-    }
-  }, []);
+  const [activeWallets, setActiveWallets] = useState(initialActiveWallets);
 
   useEffect(() => {
+    let ignore = false;
+
+    async function loadMetrics() {
+      try {
+        const data = await getDashboardData();
+        if (!ignore && data) {
+          setNetWorth(data.netWorth);
+          setIncomeMonth(data.incomeMonth);
+          setExpenseMonth(data.expenseMonth);
+          setActiveWallets(data.activeWalletsCount);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error("Gagal memuat KPI finansial:", err);
+        }
+      }
+    }
+
     loadMetrics();
 
-    const handleCreated = () => {
+    const handleUpdate = () => {
       loadMetrics();
     };
 
-    window.addEventListener("fintrack:transaction-created", handleCreated);
+    window.addEventListener("fintrack:transaction-created", handleUpdate);
+    window.addEventListener("fintrack:transaction-updated", handleUpdate);
+    window.addEventListener("fintrack:transaction-deleted", handleUpdate);
+    window.addEventListener("fintrack:wallet-updated", handleUpdate);
+
     return () => {
-      window.removeEventListener("fintrack:transaction-created", handleCreated);
+      ignore = true;
+      window.removeEventListener("fintrack:transaction-created", handleUpdate);
+      window.removeEventListener("fintrack:transaction-updated", handleUpdate);
+      window.removeEventListener("fintrack:transaction-deleted", handleUpdate);
+      window.removeEventListener("fintrack:wallet-updated", handleUpdate);
     };
-  }, [loadMetrics]);
+  }, []);
 
   const netSavings = incomeMonth - expenseMonth;
   const savingsRate = incomeMonth > 0 ? ((netSavings / incomeMonth) * 100).toFixed(1) : "0";
@@ -81,11 +94,11 @@ export function KPICards({
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2.5 py-1 font-semibold text-teal-600 dark:text-teal-400">
-              <TrendingUp className="h-3 w-3" />
-              Tersinkron NeonDB
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Tersinkron Real-Time
             </span>
-            <span>{activeWallets} Akun Aktif</span>
+            <span className="font-medium">{activeWallets} Akun Aktif</span>
           </div>
         </CardContent>
       </Card>

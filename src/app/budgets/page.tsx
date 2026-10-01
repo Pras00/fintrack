@@ -163,8 +163,27 @@ export default function BudgetsPage() {
   }, []);
 
   useEffect(() => {
-    fetchBudgets(month, year);
-  }, [fetchBudgets, month, year]);
+    let ignore = false;
+    async function load() {
+      try {
+        const res = await getBudgetsAction(month, year);
+        if (!ignore) {
+          setData(res);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error("Gagal memuat anggaran:", err);
+          toast.error("Gagal memuat data anggaran");
+          setIsLoading(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [month, year]);
 
   // Reactive listener for budget updates and transaction creation
   useEffect(() => {
@@ -347,7 +366,7 @@ export default function BudgetsPage() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-16 text-muted-foreground gap-3">
           <Loader2 className="h-7 w-7 animate-spin text-teal-600 dark:text-teal-400" />
-          <span className="text-xs font-medium">Memuat data anggaran dari database NeonDB...</span>
+          <span className="text-xs font-medium">Menyiapkan alokasi anggaran...</span>
         </div>
       ) : budgets.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-border/80">

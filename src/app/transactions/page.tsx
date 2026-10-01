@@ -86,17 +86,33 @@ export default function TransactionsPage() {
   }, []);
 
   useEffect(() => {
-    fetchTransactions();
+    let ignore = false;
+    async function load() {
+      try {
+        const data = await getTransactionsAction();
+        if (!ignore) {
+          setTransactions(data);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error("Gagal memuat transaksi:", err);
+          setIsLoading(false);
+        }
+      }
+    }
+    load();
 
     const handleCreated = () => {
-      fetchTransactions();
+      load();
     };
 
     window.addEventListener("fintrack:transaction-created", handleCreated);
     return () => {
+      ignore = true;
       window.removeEventListener("fintrack:transaction-created", handleCreated);
     };
-  }, [fetchTransactions]);
+  }, []);
 
   const { startDate, endDate, dateLabel } = useFilterStore();
 
@@ -321,7 +337,7 @@ export default function TransactionsPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-12 text-muted-foreground gap-3">
             <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
-            <span className="text-xs">Memuat buku transaksi dari database NeonDB...</span>
+            <span className="text-xs">Menyiapkan riwayat transaksi...</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-xs text-muted-foreground">
