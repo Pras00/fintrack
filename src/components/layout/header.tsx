@@ -21,9 +21,14 @@ export function Header() {
   const { dateLabel } = useFilterStore();
   const { isOpen, toggleMobile } = useSidebarStore();
 
-  // Hide global date range filter on pages with their own temporal controls (like monthly budgets)
-  const isBudgetPage = pathname.startsWith("/budgets");
-  const isDateFilterVisible = !isBudgetPage;
+  // Only show global date range filter on pages that filter transactions by date range
+  // Hidden on static/real-time balance pages (/wallets), monthly budgets (/budgets), and settings (/settings)
+  const DATE_FILTER_ROUTES = ["/dashboard", "/transactions", "/analytics"];
+  const isDateFilterVisible =
+    pathname === "/" ||
+    DATE_FILTER_ROUTES.some(
+      (route) => pathname === route || pathname.startsWith(route + "/")
+    );
 
   // Contextual page title based on current active route
   const getPageTitle = (path: string) => {
