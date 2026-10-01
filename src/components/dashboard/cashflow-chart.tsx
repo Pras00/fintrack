@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import {
   AreaChart,
   Area,
@@ -12,28 +12,27 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { formatCompactRupiah, formatRupiah } from "@/lib/utils";
-import { TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
+import { getCashflowChartAction, CashflowPoint } from "@/actions/dashboard";
 
-// Mock data representing a typical monthly cashflow timeline
-const MOCK_DATA_30D = [
-  { date: "01 Sep", income: 15000000, expense: 1200000 },
-  { date: "05 Sep", income: 0, expense: 2850000 },
-  { date: "10 Sep", income: 3500000, expense: 950000 },
-  { date: "15 Sep", income: 500000, expense: 4100000 },
-  { date: "20 Sep", income: 1200000, expense: 800000 },
-  { date: "25 Sep", income: 25000000, expense: 3200000 },
-  { date: "27 Sep", income: 0, expense: 650000 },
-];
+function useIsMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
 
-const MOCK_DATA_7D = [
-  { date: "21 Sep", income: 450000, expense: 320000 },
-  { date: "22 Sep", income: 0, expense: 180000 },
-  { date: "23 Sep", income: 1200000, expense: 750000 },
-  { date: "24 Sep", income: 0, expense: 420000 },
-  { date: "25 Sep", income: 25000000, expense: 3200000 },
-  { date: "26 Sep", income: 350000, expense: 510000 },
-  { date: "27 Sep", income: 0, expense: 650000 },
-];
+function useIsMobile() {
+  return useSyncExternalStore(
+    (notify) => {
+      window.addEventListener("resize", notify);
+      return () => window.removeEventListener("resize", notify);
+    },
+    () => window.innerWidth < 640,
+    () => false
+  );
+}
 
 interface CustomTooltipProps {
   active?: boolean;
@@ -107,24 +106,54 @@ function formatChartAxis(val: number, isCompactMobile: boolean): string {
 }
 
 export function CashflowChart() {
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useIsMounted();
+  const isMobile = useIsMobile();
   const [range, setRange] = useState<"7d" | "30d">("30d");
-  const [isMobile, setIsMobile] = useState(false);
+
+  const [data, setData] = useState<CashflowPoint[]>([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpense, setTotalExpense] = useState(0);
+  const [netSavingsRate, setNetSavingsRate] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsMounted(true);
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+    let ignore = false;
 
-  const data = range === "7d" ? MOCK_DATA_7D : MOCK_DATA_30D;
-  const totalIncome = data.reduce((acc, curr) => acc + curr.income, 0);
-  const totalExpense = data.reduce((acc, curr) => acc + curr.expense, 0);
-  const netSavingsRate = totalIncome > 0 ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : 0;
+    async function loadData() {
+      try {
+        const res = await getCashflowChartAction(range);
+        if (!ignore) {
+          setData(res.points);
+          setTotalIncome(res.totalIncome);
+          setTotalExpense(res.totalExpense);
+          setNetSavingsRate(res.netSavingsRate);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error("Gagal memuat data cashflow riil:", err);
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadData();
+
+    const handleTransactionChange = () => {
+      loadData();
+    };
+
+    window.addEventListener("fintrack:transaction-created", handleTransactionChange);
+    window.addEventListener("fintrack:transaction-updated", handleTransactionChange);
+    window.addEventListener("fintrack:transaction-deleted", handleTransactionChange);
+
+    return () => {
+      ignore = true;
+      window.removeEventListener("fintrack:transaction-created", handleTransactionChange);
+      window.removeEventListener("fintrack:transaction-updated", handleTransactionChange);
+      window.removeEventListener("fintrack:transaction-deleted", handleTransactionChange);
+    };
+  }, [range]);
 
   const yAxisWidth = isMobile ? 48 : 64;
   const chartMargin = {
@@ -150,7 +179,10 @@ export function CashflowChart() {
         {/* Inline Segmented Control */}
         <div className="flex items-center self-start sm:self-auto rounded-lg border border-border/60 bg-muted/40 p-0.5 text-xs shrink-0">
           <button
-            onClick={() => setRange("7d")}
+            onClick={() => {
+              setIsLoading(true);
+              setRange("7d");
+            }}
             className={`rounded-md px-2.5 py-1 font-medium transition-all cursor-pointer ${
               range === "7d"
                 ? "bg-background text-foreground shadow-xs font-semibold"
@@ -160,7 +192,10 @@ export function CashflowChart() {
             7 Hari
           </button>
           <button
-            onClick={() => setRange("30d")}
+            onClick={() => {
+              setIsLoading(true);
+              setRange("30d");
+            }}
             className={`rounded-md px-2.5 py-1 font-medium transition-all cursor-pointer ${
               range === "30d"
                 ? "bg-background text-foreground shadow-xs font-semibold"
@@ -179,34 +214,43 @@ export function CashflowChart() {
             <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
               Total Masuk ({range.toUpperCase()})
             </span>
-            <span className="text-xs sm:text-sm font-bold text-teal-600 dark:text-teal-400 tabular-nums flex items-center gap-1 mt-0.5">
-              <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
-              {formatCompactRupiah(totalIncome)}
-            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <ArrowUpRight className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span className="text-sm sm:text-base font-bold text-foreground tabular-nums">
+                {formatCompactRupiah(totalIncome)}
+              </span>
+            </div>
           </div>
+
           <div>
             <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
               Total Keluar ({range.toUpperCase()})
             </span>
-            <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums flex items-center gap-1 mt-0.5">
-              <ArrowDownRight className="h-3.5 w-3.5 shrink-0" />
-              {formatCompactRupiah(totalExpense)}
-            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <ArrowDownRight className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+              <span className="text-sm sm:text-base font-bold text-foreground tabular-nums">
+                {formatCompactRupiah(totalExpense)}
+              </span>
+            </div>
           </div>
-          <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 border-border/40 pt-2 sm:pt-0">
+
+          <div className="col-span-2 sm:col-span-1 pt-1.5 sm:pt-0 border-t sm:border-t-0 border-border/40">
             <span className="text-muted-foreground block text-[10px] sm:text-[11px] font-medium">
               Rasio Tabungan Bersih
             </span>
-            <span className="text-xs sm:text-sm font-bold text-teal-600 dark:text-teal-400 tabular-nums block mt-0.5">
-              {netSavingsRate}% dari Pemasukan
-            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-sm sm:text-base font-bold text-teal-600 dark:text-teal-400 tabular-nums">
+                {totalIncome > 0 ? `${netSavingsRate}%` : "0%"}
+              </span>
+              <span className="text-[11px] text-muted-foreground">dari Pemasukan</span>
+            </div>
           </div>
         </div>
 
-        {/* Chart Viewport */}
-        <div className="h-[230px] sm:h-[260px] md:h-[280px] w-full min-w-0">
-          {isMounted ? (
-            <ResponsiveContainer width="100%" height="100%">
+        {/* Visual Canvas */}
+        <div className="h-[250px] w-full min-w-0">
+          {isMounted && !isLoading ? (
+            <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={data} margin={chartMargin}>
                 <defs>
                   <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -214,44 +258,51 @@ export function CashflowChart() {
                     <stop offset="95%" stopColor="#0D9488" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#E11D48" stopOpacity={0.25} />
+                    <stop offset="5%" stopColor="#E11D48" stopOpacity={0.2} />
                     <stop offset="95%" stopColor="#E11D48" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border/30" />
+
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  className="stroke-border/40"
+                />
+
                 <XAxis
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  padding={{ left: 16, right: 16 }}
-                  tick={{ fontSize: isMobile ? 10 : 11, fill: "currentColor" }}
                   tickMargin={8}
-                  className="text-muted-foreground"
+                  interval={range === "7d" ? 0 : isMobile ? 5 : 3}
+                  className="text-[10px] sm:text-xs fill-muted-foreground"
                 />
+
                 <YAxis
-                  width={yAxisWidth}
                   tickLine={false}
                   axisLine={false}
+                  tickMargin={4}
+                  width={yAxisWidth}
                   tickFormatter={(val) => formatChartAxis(val, isMobile)}
-                  tick={{ fontSize: isMobile ? 10 : 11, fill: "currentColor" }}
-                  tickMargin={isMobile ? 4 : 8}
-                  className="text-muted-foreground"
+                  className="text-[10px] sm:text-xs fill-muted-foreground"
                 />
-                <Tooltip
-                  content={<CustomTooltip />}
-                  cursor={{ stroke: "rgba(13, 148, 136, 0.3)", strokeWidth: 1.5, strokeDasharray: "4 4" }}
-                />
+
+                <Tooltip content={<CustomTooltip />} />
+
                 <Area
                   type="monotone"
                   dataKey="income"
+                  name="Pemasukan"
                   stroke="#0D9488"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#incomeGradient)"
                 />
+
                 <Area
                   type="monotone"
                   dataKey="expense"
+                  name="Pengeluaran"
                   stroke="#E11D48"
                   strokeWidth={2}
                   fillOpacity={1}
@@ -260,8 +311,9 @@ export function CashflowChart() {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[230px] sm:h-[260px] md:h-[280px] w-full animate-pulse bg-muted/20 rounded-lg flex items-center justify-center text-xs text-muted-foreground">
-              Memuat grafik arus kas...
+            <div className="h-[250px] w-full flex items-center justify-center text-xs text-muted-foreground gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
+              <span>Memuat data transaksi NeonDB...</span>
             </div>
           )}
         </div>
