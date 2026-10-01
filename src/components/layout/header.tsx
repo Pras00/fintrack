@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useFilterStore } from "@/stores/use-filter-store";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,11 +17,28 @@ import {
 } from "lucide-react";
 
 export function Header() {
+  const pathname = usePathname();
   const { dateLabel } = useFilterStore();
   const { isOpen, toggleMobile } = useSidebarStore();
 
+  // Hide global date range filter on pages with their own temporal controls (like monthly budgets)
+  const isBudgetPage = pathname.startsWith("/budgets");
+  const isDateFilterVisible = !isBudgetPage;
+
+  // Contextual page title based on current active route
+  const getPageTitle = (path: string) => {
+    if (path.startsWith("/budgets")) return "Perencanaan Anggaran";
+    if (path.startsWith("/transactions")) return "Transaksi";
+    if (path.startsWith("/wallets")) return "Dompet & Rekening";
+    if (path.startsWith("/analytics")) return "Laporan & Analitik";
+    if (path.startsWith("/settings")) return "Pengaturan";
+    return "Dashboard Keuangan";
+  };
+
+  const pageTitle = getPageTitle(pathname);
+
   return (
-    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-border/70 bg-background/85 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+    <header className="sticky top-0 z-20 flex h-16 py-7 w-full items-center justify-between border-b border-border/70 bg-background/85 px-4 sm:px-6 lg:px-8 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
       {/* Left: Sidebar Toggle, Brand Logo & Title */}
       <div className="flex items-center gap-2.5 sm:gap-3">
         {/* Mobile & Tablet Drawer Toggle Button */}
@@ -48,27 +66,34 @@ export function Header() {
           <div className="h-4 w-px bg-border/70 shrink-0" />
         </div>
 
-        {/* Title & Date Subtitle */}
+        {/* Contextual Title & Optional Date Subtitle */}
         <div>
           <h1 className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-tight">
-            Dashboard Keuangan
+            {pageTitle}
           </h1>
-          <span className="sm:hidden text-[10px] text-muted-foreground block -mt-0.5 truncate max-w-[130px]">
-            {dateLabel}
-          </span>
+          {isDateFilterVisible && (
+            <span className="sm:hidden text-[10px] text-muted-foreground block -mt-0.5 truncate max-w-[130px]">
+              {dateLabel}
+            </span>
+          )}
         </div>
 
-        <span className="hidden sm:inline-block text-muted-foreground text-xs">•</span>
-        <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-          <span>Periode: <strong className="font-semibold text-foreground">{dateLabel}</strong></span>
-        </span>
+        {/* Global Period Info (hidden on pages like /budgets which have their own monthly navigation) */}
+        {isDateFilterVisible && (
+          <>
+            <span className="hidden sm:inline-block text-muted-foreground text-xs">•</span>
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+              <span>Periode: <strong className="font-semibold text-foreground">{dateLabel}</strong></span>
+            </span>
+          </>
+        )}
       </div>
 
       {/* Right Actions: Interactive Date Range Filter, Quick Entry, Theme */}
       <div className="flex items-center gap-2.5 sm:gap-3.5">
-        {/* Interactive Custom Date Range & Preset Picker */}
-        <DateRangePicker />
+        {/* Interactive Custom Date Range & Preset Picker (hidden on budgets page) */}
+        {isDateFilterVisible && <DateRangePicker />}
 
         {/* Global Action Button - Tambah Transaksi */}
         <Link
